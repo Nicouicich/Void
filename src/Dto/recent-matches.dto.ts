@@ -5,7 +5,7 @@ export class RecentMatchesDto {
   summonerName: string;
 
   @ApiProperty()
-  region: string = 'americas' || 'asia' || 'europe' || 'sea';
+  region: string;
 
   @ApiProperty()
   recentMatches: number;

@@ -1,4 +1,4 @@
-export class SummonerStatsDto {
+export class SummonerStatsEntity {
   summonerName: string;
   summonerLevel: number;
   queueType: string;
@@ -9,7 +9,6 @@ export class SummonerStatsDto {
   winrate: number;
   CSPerMinute: number;
   KDA: number;
-  AvgVisionScore: number;
 
   constructor(
     summonerName: string,
@@ -22,7 +21,6 @@ export class SummonerStatsDto {
     winrate: number,
     CSPerMinute: number,
     KDA: number,
-    AvgVisionScore: number,
   ) {
     this.summonerName = summonerName;
     this.summonerLevel = summonerLevel;
@@ -34,6 +32,5 @@ export class SummonerStatsDto {
     this.winrate = winrate;
     this.CSPerMinute = CSPerMinute;
     this.KDA = KDA;
-    this.AvgVisionScore = AvgVisionScore;
   }
 }
