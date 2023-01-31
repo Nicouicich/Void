@@ -3,7 +3,6 @@ import { RecentMatchesService } from './../Services/recent-matches.service';
 import { Controller, Body, Get } from '@nestjs/common';
 import { PlayerService } from 'src/Services/player.service';
 import { logger } from 'src/config/winston';
-import { MatchEntity } from 'src/Entities/match.entity';
 
 @Controller('recent-matches')
 export class RecentMatchesController {

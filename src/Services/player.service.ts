@@ -1,17 +1,21 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
-import { enviromentVars } from 'src/config/config';
+import { Inject, Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { logger } from 'src/config/winston';
 import { Repository } from 'typeorm';
-import { MatchEntity } from 'src/Entities/match.entity';
-import { InjectRepository } from '@nestjs/typeorm';
+
+import { enviromentVars } from 'src/config/config';
+import { logger } from 'src/config/winston';
+import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
+
 
 @Injectable()
 export class PlayerService {
     private STATUS_CORRECT = 200;
 
-    constructor(private readonly HttpService: HttpService) {}
+    constructor(private HttpService: HttpService,
+        @Inject("SUMMONER_STATS_REPOSITORY") private playerRepo: Repository<SummonerStatsEntity>
+    ) {
+    }
 
     public async getPlayerIdByName(summonerName: string, region: string) {
         try {
@@ -63,6 +67,7 @@ export class PlayerService {
             }
         } catch (e) {
             const message = `Error while requesting a player PuuID by name. Cause: ${e.cause}`;
+            console.log(e);
             logger.error(message);
             return {
                 message: message,
@@ -70,4 +75,5 @@ export class PlayerService {
             };
         }
     }
+    
 }

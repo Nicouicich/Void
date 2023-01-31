@@ -1,17 +1,17 @@
 import { HttpService } from '@nestjs/axios';
-import { Body, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { enviromentVars } from 'src/config/config';
 import { firstValueFrom } from 'rxjs';
 import { logger } from 'src/config/winston';
 import { Repository } from 'typeorm';
+
 import { MatchEntity } from 'src/Entities/match.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class RecentMatchesService {
 
-    constructor(private readonly HttpService: HttpService,
-        @InjectRepository(MatchEntity) private matchRepo: Repository<MatchEntity>
+    constructor(private HttpService: HttpService,
+        @Inject("RECENT_MATCH_REPOSITORY") private matchRepo: Repository<MatchEntity>
     ) {}
 
     createMatch(match: any) {

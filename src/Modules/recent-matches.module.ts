@@ -1,14 +1,20 @@
-import { RecentMatchesService } from './../Services/recent-matches.service';
+import { PlayerModule } from './player.module';
+import { DatabaseModule } from './database.module';
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+
+import { RecentMatchesService } from './../Services/recent-matches.service';
 import { RecentMatchesController } from 'src/Controllers/recent-matches.controller';
-import { PlayerService } from 'src/Services/player.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { MatchEntity } from 'src/Entities/match.entity';
+import { DataSource } from 'typeorm';
 
 @Module({
-  imports: [HttpModule, TypeOrmModule.forFeature([MatchEntity])],
+  imports: [HttpModule, DatabaseModule, PlayerModule],
   controllers: [RecentMatchesController],
-  providers: [RecentMatchesService, PlayerService],
+  providers: [RecentMatchesService,{
+    provide: 'RECENT_MATCH_REPOSITORY',
+    useFactory: (dataSource: DataSource) => dataSource.getRepository(MatchEntity),
+    inject: ['DATA_SOURCE'],
+  },],
 })
 export class RecentMatchesModule {}

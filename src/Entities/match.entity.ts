@@ -1,10 +1,13 @@
 import { Entity, Column, PrimaryColumn } from "typeorm";
 
 @Entity()
-export class MatchEntity {
+export class MatchEntity{
 
     @PrimaryColumn({ unique: true })
     matchId: string;
+
+    @Column()
+    gameDuration: number;
 
     @Column()
     championName: string;
@@ -27,7 +30,7 @@ export class MatchEntity {
     @Column()
     deaths: number;
 
-    @Column({type: "decimal", precision: 10, scale: 2, default: 0})
+    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
     kda: number;
 
     @Column()
@@ -46,7 +49,9 @@ export class MatchEntity {
         win: boolean,
         kills: number,
         queueId: number,
-        kda: number) {
+        kda: number,
+        gameDuration: number) {
+
         this.matchId = matchId;
         this.championName = championName;
         this.totalDamageDealt = totalDamageDealt;
@@ -57,6 +62,7 @@ export class MatchEntity {
         this.win = win;
         this.kills = kills;
         this.queueId = queueId;
-        this.kda = kda
+        this.kda = kda;
+        this.gameDuration = gameDuration;
     }
 }
