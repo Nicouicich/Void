@@ -1,14 +1,39 @@
+import { Entity, Column, PrimaryColumn } from "typeorm";
+
+@Entity()
 export class MatchEntity {
+
+    @PrimaryColumn({ unique: true })
     matchId: string;
+
+    @Column()
     championName: string;
+
+    @Column()
     totalDamageDealt: number;
+
+    @Column()
     totalMinionsKilled: number;
+
+    @Column()
     visionScore: number;
+
+    @Column()
     kills: number;
+
+    @Column()
     assists: number;
+
+    @Column()
     deaths: number;
-    KDA: number;
+
+    @Column({type: "decimal", precision: 10, scale: 2, default: 0})
+    kda: number;
+
+    @Column()
     win: boolean;
+
+    @Column()
     queueId: number;
 
     constructor(matchId: string,
@@ -20,7 +45,8 @@ export class MatchEntity {
         deaths: number,
         win: boolean,
         kills: number,
-        queueId: number) {
+        queueId: number,
+        kda: number) {
         this.matchId = matchId;
         this.championName = championName;
         this.totalDamageDealt = totalDamageDealt;
@@ -31,6 +57,6 @@ export class MatchEntity {
         this.win = win;
         this.kills = kills;
         this.queueId = queueId;
-        this.KDA = (kills + assists) / (deaths ? deaths : 1);
+        this.kda = kda
     }
 }

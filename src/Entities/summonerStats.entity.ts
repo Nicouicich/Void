@@ -1,13 +1,36 @@
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
+
+@Entity()
 export class SummonerStatsEntity {
+
+  @PrimaryGeneratedColumn()
   summonerName: string;
+
+  @Column()
   summonerLevel: number;
+
+  @Column()
   queueType: string;
+
+  @Column()
   region: string;
+
+  @Column()
   rank: string;
+
+  @Column()
   wins: number;
+
+  @Column()
   losses: number;
+
+  @Column()
   winrate: number;
+
+  @Column()
   CSPerMinute: number;
+
+  @Column()
   KDA: number;
 
   constructor(

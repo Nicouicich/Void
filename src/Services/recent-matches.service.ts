@@ -1,12 +1,23 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Body, Injectable } from '@nestjs/common';
 import { enviromentVars } from 'src/config/config';
 import { firstValueFrom } from 'rxjs';
 import { logger } from 'src/config/winston';
+import { Repository } from 'typeorm';
+import { MatchEntity } from 'src/Entities/match.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class RecentMatchesService {
-    constructor(private readonly HttpService: HttpService) {}
+
+    constructor(private readonly HttpService: HttpService,
+        @InjectRepository(MatchEntity) private matchRepo: Repository<MatchEntity>
+    ) {}
+
+    createMatch(match: any) {
+        const newMatch = this.matchRepo.create(match);
+        return this.matchRepo.save(newMatch);
+    }
 
     public async getRecentMatches(
         puuid: string,
@@ -14,18 +25,11 @@ export class RecentMatchesService {
         recentMatches = 20,
     ) {
         try {
-            const regionName = this.getRegionName(region);
-            if (regionName) {
-                const url = `https://${regionName}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${recentMatches}&api_key=${enviromentVars.LOL_API_KEY}`;
-                const response = await firstValueFrom(this.HttpService.get(url));
-                return response.data;
-            } else {
-                return {
-                    message: `Region: ${region} unavailable`,
-                    status_code: 404
-                };
-            }
-        } catch (e) {
+            const url = `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${recentMatches}&api_key=${enviromentVars.LOL_API_KEY}`;
+            const response = await firstValueFrom(this.HttpService.get(url));
+            return response.data;
+        }
+        catch (e) {
             logger.error(
                 `Error while requesting a recent matches from the player with PuuID: ${puuid}. Status code: ${e.response.status}`,
             );
@@ -33,60 +37,28 @@ export class RecentMatchesService {
         }
     }
 
-
     public async getInfoAboutAMatch(matchID: string, region: string, puuID: string) {
         try {
-            const regionName = this.getRegionName(region);
-            const url = `https://${regionName}.api.riotgames.com/lol/match/v5/matches/${matchID}?api_key=${enviromentVars.LOL_API_KEY}`;
+            const url = `https://${region}.api.riotgames.com/lol/match/v5/matches/${matchID}?api_key=${enviromentVars.LOL_API_KEY}`;
             const response = await firstValueFrom(this.HttpService.get(url));
+            if (response) {
+                const data = await response.data.info.participants.filter(match => {
 
-            return response.data.info.participants.filter(participant => {
-                if (participant.puuid === puuID) {
-                    participant.queueId = response.data.info.queueId;
-                    participant.gameDuration = response.data.info.gameDuration;
-                    participant.matchId = matchID;
-                    return participant;
-                }
-            })[0];
+                    if (match.puuid === puuID) {
+                        const matchInfo = match;
+                        matchInfo.queueId = response.data.info.queueId;
+                        matchInfo.gameDuration = response.data.info.gameDuration;
+                        matchInfo.matchId = matchID;
+                        matchInfo.kda = match.challenges.kda;
+                        return matchInfo;
+                    }
+                });
+                return data;
+            }
         }
         catch (e) {
 
         }
-    }
-
-    private getRegionName(region: string): string | null {
-        region = region.toUpperCase();
-        let response: string | null;
-        switch (region) {
-            case 'BR1':
-            case 'LA1':
-            case 'LA2':
-            case 'NA1':
-                response = 'americas';
-                break;
-            case 'EUN1':
-            case 'EUW1':
-                response = 'europe';
-                break;
-            case 'JP1':
-            case 'KR':
-            case 'RU':
-            case 'PH2':
-            case 'TR1':
-            case 'TH2':
-            case 'SG2':
-            case 'TW2':
-            case 'VN2':
-                response = 'asia';
-                break;
-            case 'OC1':
-                response = 'SEA';
-                break;
-            default:
-                response = null;
-                break;
-        }
-        return response;
     }
 
 }

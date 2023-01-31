@@ -25,16 +25,21 @@ export class RecentMatchesController {
                 config.region,
             );
             if (typeof summonerPuuID === 'string') {
-                const recentMatches = await this.RecentMatchesService.getRecentMatches(
-                    summonerPuuID,
-                    config.region,
-                    config.recentMatches,
-                );
-                const data = await this.getRecentMatchesInfo(recentMatches, config.region, summonerPuuID);
-                return data;
-                // status_code = 200;
-                // message = matchesInfo;
-
+                const regionName = this.getRegionName(config.region);
+                if (regionName) {
+                    const recentMatches = await this.RecentMatchesService.getRecentMatches(
+                        summonerPuuID,
+                        regionName,
+                        config.recentMatches,
+                    );
+                    const data = await this.getRecentMatchesInfo(recentMatches, config.region, summonerPuuID);
+                    return data;
+                    // status_code = 200;
+                    // message = matchesInfo;
+                } else {
+                    message = `Region: ${config.region} unavailable`;
+                    status_code = 404;
+                }
             } else {
                 message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
                 logger.error(message);
@@ -51,32 +56,58 @@ export class RecentMatchesController {
     }
 
     private async getRecentMatchesInfo(recentMatches: string[], region: string, summonerPuuID: string) {
-        let match: MatchEntity;
+        const regionName = this.getRegionName(region);
         let matchesInfo = recentMatches.map(async (matchID: string) => {
-            return await this.RecentMatchesService.getInfoAboutAMatch(matchID, region, summonerPuuID);
+            return await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName, summonerPuuID);
         });
         matchesInfo = await Promise.all(matchesInfo).then(data => {
             return data;
         });
 
-
-        let data = matchesInfo.map((matchInfo: any) => {
-            match = new MatchEntity(
-                matchInfo.matchId,
-                matchInfo.championName,
-                matchInfo.totalDamageDealt,
-                matchInfo.totalMinionsKilled,
-                matchInfo.visionScore,
-                matchInfo.assists,
-                matchInfo.deaths,
-                matchInfo.win,
-                matchInfo.kills,
-                matchInfo.queueId
-            );
-            return match;
+        // Save the matches in the DB
+        const data = matchesInfo.map(async (matchInfo: any) => {
+            return await this.RecentMatchesService.createMatch(matchInfo);
         });
 
-        return data;
+        return await Promise.all(data).then(data => {
+            return data;
+        });
+
+    }
+
+    private getRegionName(region: string): string | null {
+        region = region.toUpperCase();
+        let response: string | null;
+        switch (region) {
+            case 'BR1':
+            case 'LA1':
+            case 'LA2':
+            case 'NA1':
+                response = 'americas';
+                break;
+            case 'EUN1':
+            case 'EUW1':
+                response = 'europe';
+                break;
+            case 'JP1':
+            case 'KR':
+            case 'RU':
+            case 'PH2':
+            case 'TR1':
+            case 'TH2':
+            case 'SG2':
+            case 'TW2':
+            case 'VN2':
+                response = 'asia';
+                break;
+            case 'OC1':
+                response = 'SEA';
+                break;
+            default:
+                response = null;
+                break;
+        }
+        return response;
     }
 }
 
