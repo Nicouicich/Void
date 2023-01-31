@@ -1,8 +1,8 @@
-import {logger} from './config/winston';
-import {NestFactory} from '@nestjs/core';
-import {AppModule} from './app.module';
-import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-import {enviromentVars} from './config/config';
+import { logger } from './config/winston';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { enviromentVars } from './config/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

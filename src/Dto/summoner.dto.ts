@@ -1,14 +1,14 @@
-import {ApiProperty} from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class SummonerDto {
-    @ApiProperty()
-    summonerName: string;
+  @ApiProperty()
+  summonerName: string;
 
-    @ApiProperty()
-    region: string;
+  @ApiProperty()
+  region: string;
 
-    constructor(summonerName: string, region: string) {
-        this.summonerName = summonerName;
-        this.region = region;
-    }
+  constructor(summonerName: string, region: string) {
+    this.summonerName = summonerName;
+    this.region = region;
+  }
 }

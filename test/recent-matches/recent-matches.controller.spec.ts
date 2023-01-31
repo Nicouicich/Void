@@ -1,5 +1,5 @@
-import {Test, TestingModule} from '@nestjs/testing';
-import {RecentMatchesController} from '../../src/Controllers/recent-matches.controller';
+import { Test, TestingModule } from '@nestjs/testing';
+import { RecentMatchesController } from '../../src/Controllers/recent-matches.controller';
 
 describe('RecentMatchesController', () => {
   let controller: RecentMatchesController;
