@@ -1,5 +1,6 @@
-import { SummonerDto } from '../Dto/summoner.dto';
 import { Controller, Body, Get } from '@nestjs/common';
+
+import { SummonerDto } from '../Dto/summoner.dto';
 import { PlayerService } from 'src/Services/player.service';
 
 @Controller('player')

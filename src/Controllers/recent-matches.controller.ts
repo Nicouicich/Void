@@ -1,6 +1,7 @@
+import { Controller, Body, Get, Param } from '@nestjs/common';
+
 import { RecentMatchesDto } from './../Dto/recent-matches.dto';
 import { RecentMatchesService } from './../Services/recent-matches.service';
-import { Controller, Body, Get } from '@nestjs/common';
 import { PlayerService } from 'src/Services/player.service';
 import { logger } from 'src/config/winston';
 
@@ -52,6 +53,11 @@ export class RecentMatchesController {
             data: message,
             status_code: status_code,
         };
+    }
+
+    @Get()
+    async getMatchesByQueueId(@Param() id: number) {
+
     }
 
     private async getRecentMatchesInfo(recentMatches: string[], region: string, summonerPuuID: string) {
