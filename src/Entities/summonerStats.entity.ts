@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryColumn } from "typeorm";
+import { ISummonerLeague } from './../interfaces/summonerLeagues.interface';
 
 @Entity()
 export class SummonerStatsEntity {
@@ -7,53 +8,38 @@ export class SummonerStatsEntity {
   summonerName: string;
 
   @Column()
-  summonerLevel: number;
+  puuid: string;
 
   @Column()
-  queueType: string;
+  id: string;
+
+  @Column()
+  profileIconId: number;
+
+  @Column()
+  summonerLevel: number;
+
+  @Column("jsonb")
+  leagues: ISummonerLeague[];
 
   @Column()
   region: string;
 
-  @Column()
-  rank: string;
-
-  @Column()
-  wins: number;
-
-  @Column()
-  losses: number;
-
-  @Column()
-  winrate: number;
-
-  @Column()
-  CSPerMinute: number;
-
-  @Column()
-  KDA: number;
-
   constructor(
     summonerName: string,
+    puuid: string,
+    id: string,
     summonerLevel: number,
-    queueType: string,
     region: string,
-    rank: string,
-    wins: number,
-    losses: number,
-    winrate: number,
-    CSPerMinute: number,
-    KDA: number,
+    profileIconId: number,
+    leagues: ISummonerLeague[]
   ) {
     this.summonerName = summonerName;
     this.summonerLevel = summonerLevel;
-    this.queueType = queueType;
     this.region = region;
-    this.rank = rank;
-    this.wins = wins;
-    this.losses = losses;
-    this.winrate = winrate;
-    this.CSPerMinute = CSPerMinute;
-    this.KDA = KDA;
+    this.puuid = puuid;
+    this.id = id;
+    this.profileIconId = profileIconId;
+    this.leagues = leagues;
   }
 }

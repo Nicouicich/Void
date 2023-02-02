@@ -1,0 +1,6 @@
+Cuando me piden informacion respecto a un usuario, hago lo siguiente:
+
+1. Reviso si ese usuario esta en mi base de datos
+    1.a Existe en mi base de datos, retorno lo que tengo.
+    1.b No existe en mi base de datos.
+        1.1.A. Hago una consulta respecto a esa cuenta y otra que traiga los ultimos 20 partidos de ese usuario y guardo esa info en la base de datos.

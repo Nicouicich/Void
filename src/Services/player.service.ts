@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { enviromentVars } from 'src/config/config';
 import { logger } from 'src/config/winston';
 import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
+import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
 
 
 @Injectable()
@@ -17,25 +18,16 @@ export class PlayerService {
     ) {
     }
 
-    public async getPlayerIdByName(summonerName: string, region: string) {
-        try {
-            const name = summonerName.replaceAll(' ', '%20');
-            const url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-name/${name}?api_key=${enviromentVars.LOL_API_KEY}`;
-            const response = await firstValueFrom(this.HttpService.get(url));
-            const data = response.data;
-            const status = response.status;
+    createPlayerDB(player: any): Promise<SummonerStatsEntity[]> {
+        const newPlayer = this.playerRepo.create(player);
+        const response = this.playerRepo.save(newPlayer);
+        logger.log("info", `New user was created. Name ${player.summonerName}`);
+        return response;
+    }
 
-            if (status === this.STATUS_CORRECT) {
-                return data.id;
-            }
-        } catch (e) {
-            const message = `Error while requesting a player ID by name. Status code: ${e.response.status}`;
-            logger.error(message);
-            return {
-                message: message,
-                status_code: e.response.status,
-            };
-        }
+    getPlayerAccountDB(name: string): Promise<SummonerStatsEntity> {
+        const response = this.playerRepo.findOneBy({ summonerName: name });
+        return response;
     }
 
     public async getPlayerStats(summonerID: string, region: string) {
@@ -43,9 +35,32 @@ export class PlayerService {
             const url = `https://${region}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerID}?api_key=${enviromentVars.LOL_API_KEY}`;
             const response = await firstValueFrom(this.HttpService.get(url));
             const status = response.status;
-
             if (status === this.STATUS_CORRECT) {
-                return response.data;
+                const summonerLeagues = response.data;
+                if (summonerLeagues.length == 0) {
+                    return [];
+                } else {
+                    const sumLeagues = summonerLeagues.map((league) => {
+                        let winrate = 0;
+                        if ((league.wins + league.losses) != 0) {
+                            winrate = Math.trunc(league.wins / (league.wins + league.losses) * 100);
+                        }
+                        let summonerLeague: ISummonerLeague = {
+                            tier: league.tier,
+                            rank: league.rank,
+                            queueType: league.queueType,
+                            wins: league.wins,
+                            losses: league.losses,
+                            winrate: winrate,
+                            AverageCSPerMinute: 0,
+                            AverageKDA: 0,
+                            AverageVisionScore: 0
+                        };
+                        return summonerLeague;
+                    });
+
+                    return sumLeagues;
+                }
             }
         } catch (e) {
             const message = `Error while requesting a player status by Summoner ID. Status code: ${e.response.status}`;
@@ -57,17 +72,14 @@ export class PlayerService {
         }
     }
 
-    public async getPlayerPuuIDByName(summonerName: string, region: string) {
+    public async getPlayerAccount(summonerName: string, region: string) {
         try {
             const name = summonerName.replaceAll(' ', '%20');
             const url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-name/${name}?api_key=${enviromentVars.LOL_API_KEY}`;
             const response = await firstValueFrom(this.HttpService.get(url));
-            if (response) {
-                return response.data.puuid;
-            }
+            return response.data;
         } catch (e) {
-            const message = `Error while requesting a player PuuID by name. Cause: ${e.cause}`;
-            console.log(e);
+            const message = `Error while requesting an account player by name. Cause: ${e.cause}`;
             logger.error(message);
             return {
                 message: message,
@@ -75,5 +87,8 @@ export class PlayerService {
             };
         }
     }
-    
+
+
+
+
 }

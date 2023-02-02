@@ -1,7 +1,9 @@
+import { IMatchParticipant } from '../interfaces/matchParticipant.interface';
 import { Entity, Column, PrimaryColumn } from "typeorm";
 
+
 @Entity()
-export class MatchEntity{
+export class MatchEntity {
 
     @PrimaryColumn({ unique: true })
     matchId: string;
@@ -9,60 +11,25 @@ export class MatchEntity{
     @Column()
     gameDuration: number;
 
-    @Column()
-    championName: string;
+    @Column("jsonb")
+    participants: IMatchParticipant[];
 
-    @Column()
-    totalDamageDealt: number;
-
-    @Column()
-    totalMinionsKilled: number;
-
-    @Column()
-    visionScore: number;
-
-    @Column()
-    kills: number;
-
-    @Column()
-    assists: number;
-
-    @Column()
-    deaths: number;
-
-    @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
-    kda: number;
-
-    @Column()
-    win: boolean;
+    @Column("simple-array")
+    summonerids: string[];
 
     @Column()
     queueId: number;
 
     constructor(matchId: string,
-        championName: string,
-        totalDamageDealt: number,
-        totalMinionsKilled: number,
-        visionScore: number,
-        assists: number,
-        deaths: number,
-        win: boolean,
-        kills: number,
         queueId: number,
-        kda: number,
-        gameDuration: number) {
+        gameDuration: number,
+        participants: IMatchParticipant[],
+        summonerids: string[]) {
 
         this.matchId = matchId;
-        this.championName = championName;
-        this.totalDamageDealt = totalDamageDealt;
-        this.totalMinionsKilled = totalMinionsKilled;
-        this.visionScore = visionScore;
-        this.assists = assists;
-        this.deaths = deaths;
-        this.win = win;
-        this.kills = kills;
+        this.participants = participants;
         this.queueId = queueId;
-        this.kda = kda;
         this.gameDuration = gameDuration;
+        this.summonerids = summonerids;
     }
 }
