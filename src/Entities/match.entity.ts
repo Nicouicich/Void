@@ -12,8 +12,8 @@ export class MatchEntity {
     gameDuration: number;
 
     @Column("jsonb")
+    
     participants: IMatchParticipant[];
-
     @Column("simple-array")
     summonerids: string[];
 

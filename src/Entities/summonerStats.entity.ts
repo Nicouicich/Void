@@ -5,13 +5,13 @@ import { ISummonerLeague } from './../interfaces/summonerLeagues.interface';
 export class SummonerStatsEntity {
 
   @PrimaryColumn({ unique: true })
+  id: string;
+
+  @Column()
   summonerName: string;
 
   @Column()
   puuid: string;
-
-  @Column()
-  id: string;
 
   @Column()
   profileIconId: number;

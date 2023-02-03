@@ -25,8 +25,8 @@ export class PlayerService {
         return response;
     }
 
-    getPlayerAccountDB(name: string): Promise<SummonerStatsEntity> {
-        const response = this.playerRepo.findOneBy({ summonerName: name });
+    getPlayerAccountDB(name: string, region: string): Promise<SummonerStatsEntity> {
+        const response = this.playerRepo.findOneBy({ summonerName: name, region: region });
         return response;
     }
 
@@ -79,7 +79,7 @@ export class PlayerService {
             const response = await firstValueFrom(this.HttpService.get(url));
             return response.data;
         } catch (e) {
-            const message = `Error while requesting an account player by name. Cause: ${e}
+            const message = `Error while requesting an account player by name. Probably cause: ${e}
             Check API Key`;
             logger.error(message);
             return {
@@ -88,8 +88,5 @@ export class PlayerService {
             };
         }
     }
-
-
-
 
 }

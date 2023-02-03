@@ -24,7 +24,7 @@ export class RecentMatchesController {
         @Body() config: RecentMatchesDto) {
         let message: string;
         try {
-            let account = await this.PlayerService.getPlayerAccountDB(config.summonerName);
+            let account = await this.PlayerService.getPlayerAccountDB(config.summonerName, config.region);
             let accountPlayer;
             //If the summoner i searched for does not exists, i create it
             if (!account) {
@@ -90,33 +90,6 @@ export class RecentMatchesController {
 
     }
 
-    // @Get('match')
-    // async match(@Query('page') page = 1,
-    //     @Query('pageSize') pageSize = 10,
-    //     @Res() res,
-    //     @Body() summoner) {
-    //     const skip = (page - 1) * pageSize;
-    //     const matches = await this.RecentMatchesService.findAllMatches(summoner.puuid, 0, skip, pageSize);
-    //     const total = await this.RecentMatchesService.countDB(summoner.puuid,);
-    //     const totalPages = Math.ceil(total / pageSize);
-
-    //     res.send({
-    //         meta: {
-    //             page,
-    //             pageSize,
-    //             total,
-    //             links: {
-    //                 first: `/recent-matches/matches?page=1&pageSize=${pageSize}`,
-    //                 last: `/recent-matches/matches?page=${totalPages}&pageSize=${pageSize}`,
-    //                 prev: `/recent-matches/matches?page=${page - 1}&pageSize=${pageSize}`,
-    //                 next: `/recent-matches/matches?page=${page + 1}&pageSize=${pageSize}`,
-    //             },
-    //         },
-    //         data: matches
-    //     });
-
-    // }
-
     @Get(':queueId')
     async getMatchesByQueueId(
         @Query('page') page = 1,
@@ -134,12 +107,18 @@ export class RecentMatchesController {
                 });
                 return;
             }
-            const accountPlayer = await this.PlayerService.getPlayerAccount(
+            let accountPlayer = await this.PlayerService.getPlayerAccountDB(
                 config.summonerName,
                 config.region,
             );
             const regionName = getRegionName(config.region);
-            if (accountPlayer) {
+            if (!accountPlayer) {
+                accountPlayer = await this.PlayerService.getPlayerAccount(config.summonerName, config.region);
+            }
+            if (!accountPlayer) {
+                message = `User with summoner name: ${config.summonerName} and region: ${config.region} does not exists`;
+                status_code = 404;
+            } else {
                 if (regionName) {
                     const skip = (page - 1) * pageSize;
                     const total = await this.RecentMatchesService.countDB(accountPlayer.puuid, queueId);
@@ -175,15 +154,16 @@ export class RecentMatchesController {
                         });
                     }
                 } else {
-                    message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
-                    logger.error(message);
-                    status_code = accountPlayer.idD;
+                    message = `Region: ${config.region} does not exists`;
+                    status_code = 400;
                 }
             }
-            return {
-                data: message,
-                status_code: status_code,
-            };
+            res.status(status_code).send(
+                {
+                    data: message,
+                }
+            );
+            return;
         } catch (e) {
             logger.error(e);
             return {
@@ -214,4 +194,3 @@ export class RecentMatchesController {
     }
 
 }
-

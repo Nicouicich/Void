@@ -20,9 +20,10 @@ export class PlayerController {
   ) {}
 
   @Get()
-  async getPlayer(@Body() summoner: SummonerDto) {
+  async getPlayer(@Res() res,
+    @Body() summoner: SummonerDto) {
     //First I check if the user exists in my database
-    let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName);
+    let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
     if (account) {
       const leagues = await Promise.all(
         account.leagues.map(async (league) => {
@@ -69,19 +70,18 @@ export class PlayerController {
 
         return summonerDto;
       } else {
-        return {
+        res.status(500).send({
           data: `Could not retrieve a player with summoner name: ${summoner.summonerName} and region: ${summoner.region}`,
-          status_code: accountPlayer,
-        };
+        });
+        return;
       }
     }
   }
 
-
   @Get(':queueId')
   async getPlayerByQueueId(@Res() res, @Param('queueId') queueId: number, @Body() summoner: SummonerDto) {
     const regionName = getRegionName(summoner.region);
-    let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName);
+    let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
     let matches;
 
     if (!isQueueIdCorrect(queueId)) {
@@ -89,55 +89,31 @@ export class PlayerController {
       res.send({
         data: `QueueID: ${queueId} is invalid`
       });
-      return
+      return;
     }
 
     if (!account) {
-      await this.getPlayer(summoner);
-      account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName);
-      matches = await this.RecentMatchesService.getRecentMatchesByQueueId(queueId, account.puuid, regionName);
-    } else {
-      matches = await this.RecentMatchesService.getPlayerMatchesDB(account.puuid, queueId);
+      await this.getPlayer(res, summoner);
+      account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
+      await this.RecentMatchesService.getRecentMatches(account.puuid, regionName);
     }
+    matches = await this.RecentMatchesService.getPlayerMatchesDB(account.puuid, queueId);
 
     if (matches.length === 0) {
       res.status(400);
       res.send({
-        data: `Player has never played a game with the id:${queueId}`
+        data: `Player does not have any recent game with the id:${queueId}`
       });
-
+      return;
     }
 
-
-    account.leagues = await this.getPlayerLeague(account.puuid, queueId, summoner.summonerName);
-
-    return account;
-
-  }
-
-
-  private async getRecentMatchesInfo(recentMatches: string[], region: string) {
-    const regionName = getRegionName(region);
-    let matchesInfo = recentMatches.map(async (matchID: string) => {
-      return await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName);
-    });
-    const matches = await Promise.all(matchesInfo).then(data => {
-      return data;
-    });
-
-    // Save the matches in the DB
-    const data = matches.map(async (match: any) => {
-      return await this.RecentMatchesService.createMatch(match);
-    });
-
-    return await Promise.all(data).then(data => {
-      return data;
-    });
+    account.leagues = await this.getPlayerLeague(account.puuid, queueId, summoner.summonerName, summoner.region);
+    res.status(200).send(
+      { data: account });
 
   }
 
-
-  getPlayerLeague = async (puuid: string, queueId: number, summonerName: string): Promise<ISummonerLeague[]> => {
+  getPlayerLeague = async (puuid: string, queueId: number, summonerName: string, region: string): Promise<ISummonerLeague[]> => {
 
     const matches = await this.RecentMatchesService.getPlayerMatchesDB(puuid, queueId);
     const queueName = getQueueName(queueId);
@@ -154,9 +130,13 @@ export class PlayerController {
 
     };
     if (queueId == 420 || queueId == 440) {
-      const player = await this.PlayerService.getPlayerAccountDB(summonerName);
+      const player = await this.PlayerService.getPlayerAccountDB(summonerName, region);
 
       const league = player.leagues.filter((element) => element.queueType == queueName);
+      console.log(league);
+      if (league.length == 0) {
+        return league;
+      }
       summonerLeagues.rank = league[0].rank;
       summonerLeagues.tier = league[0].tier;
 
@@ -182,5 +162,24 @@ export class PlayerController {
     return [summonerLeagues];
   };
 
+  getRecentMatchesInfo = async (recentMatches: string[], region: string) => {
+    const regionName = getRegionName(region);
+    let matchesInfo = recentMatches.map(async (matchID: string) => {
+      return await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName);
+    });
+    const matches = await Promise.all(matchesInfo).then(data => {
+      return data;
+    });
+
+    // Save the matches in the DB
+    const data = matches.map(async (match: any) => {
+      return await this.RecentMatchesService.createMatch(match);
+    });
+
+    return await Promise.all(data).then(data => {
+      return data;
+    });
+
+  };
 
 }
