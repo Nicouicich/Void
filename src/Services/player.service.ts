@@ -79,7 +79,8 @@ export class PlayerService {
             const response = await firstValueFrom(this.HttpService.get(url));
             return response.data;
         } catch (e) {
-            const message = `Error while requesting an account player by name. Cause: ${e.cause}`;
+            const message = `Error while requesting an account player by name. Cause: ${e}
+            Check API Key`;
             logger.error(message);
             return {
                 message: message,

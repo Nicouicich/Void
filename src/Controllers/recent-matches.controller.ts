@@ -1,16 +1,15 @@
-import { Controller, Body, Get, Param } from '@nestjs/common';
+import { Controller, Body, Get, Param, Query, Res } from '@nestjs/common';
 
 import { RecentMatchesDto } from './../Dto/recent-matches.dto';
 import { RecentMatchesService } from './../Services/recent-matches.service';
 import { PlayerService } from 'src/Services/player.service';
 import { logger } from 'src/config/winston';
-import { getRegionName } from 'src/utils/queueType';
+import { getRegionName, isQueueIdCorrect } from 'src/utils/queueType';
 import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
 import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
 
 @Controller('recent-matches')
 export class RecentMatchesController {
-    private RECENT_MATCHES_MAX = 100;
 
     constructor(
 
@@ -19,97 +18,167 @@ export class RecentMatchesController {
     ) {}
 
     @Get()
-    async getRecentMatches(@Body() config: RecentMatchesDto) {
+    async getRecentMatches(@Query('page') page = 1,
+        @Query('pageSize') pageSize = 10,
+        @Res() res,
+        @Body() config: RecentMatchesDto) {
         let message: string;
-        let status_code: number;
         try {
-            if (config.recentMatches <= this.RECENT_MATCHES_MAX) {
-                let account = await this.PlayerService.getPlayerAccountDB(config.summonerName);
-                let accountPlayer;
-                //If the summoner i searched for does not exists, i create it
-                if (!account) {
-                    accountPlayer = await this.PlayerService.getPlayerAccount(
-                        config.summonerName,
-                        config.region,
+            let account = await this.PlayerService.getPlayerAccountDB(config.summonerName);
+            let accountPlayer;
+            //If the summoner i searched for does not exists, i create it
+            if (!account) {
+                accountPlayer = await this.PlayerService.getPlayerAccount(
+                    config.summonerName,
+                    config.region,
+                );
+                const leagues: ISummonerLeague[] = await this.PlayerService.getPlayerStats(accountPlayer.id, config.region);
+                const player = new SummonerStatsEntity(config.summonerName, accountPlayer.puuid, accountPlayer.id, accountPlayer.summonerLevel, config.region, accountPlayer.profileIconId, leagues);
+                await this.PlayerService.createPlayerDB(player);
+            } else {
+                accountPlayer = account;
+            }
+            if (accountPlayer) {
+                const regionName = getRegionName(config.region);
+                if (regionName) {
+                    const recentMatches = await this.RecentMatchesService.getRecentMatches(
+                        accountPlayer.puuid,
+                        regionName,
+                        config.recentMatches,
                     );
-                    const leagues: ISummonerLeague[] = await this.PlayerService.getPlayerStats(accountPlayer.id, config.region);
-                    const player = new SummonerStatsEntity(config.summonerName, accountPlayer.puuid, accountPlayer.id, accountPlayer.summonerLevel, config.region, accountPlayer.profileIconId, leagues);
-                    await this.PlayerService.createPlayerDB(player);
+                    const data = await this.getRecentMatchesInfo(recentMatches, config.region);
+
+                    const skip = (page - 1) * pageSize;
+                    const matches = await this.RecentMatchesService.findAllMatches(accountPlayer.puuid, 0, skip, pageSize);
+                    const total = await this.RecentMatchesService.countDB(accountPlayer.puuid, 0);
+                    const totalPages = Math.ceil(total / pageSize);
+                    res.status(200);
+                    res.send({
+                        meta: {
+                            page,
+                            pageSize,
+                            total,
+                            links: {
+                                first: `/recent-matches?page=1&pageSize=${pageSize}`,
+                                last: `/recent-matches?page=${totalPages}&pageSize=${pageSize}`,
+                                prev: `/recent-matches?page=${page - 1}&pageSize=${pageSize}`,
+                                next: `/recent-matches?page=${page + 1}&pageSize=${pageSize}`,
+                            },
+                        },
+                        data: matches
+                    });
+
+                    return data;
                 } else {
-                    accountPlayer = account;
-                }
-                if (accountPlayer) {
-                    const regionName = getRegionName(config.region);
-                    if (regionName) {
-                        const recentMatches = await this.RecentMatchesService.getRecentMatches(
-                            accountPlayer.puuid,
-                            regionName,
-                            config.recentMatches,
-                        );
-                        const data = await this.getRecentMatchesInfo(recentMatches, config.region);
-                        status_code = 200;
-                        return data;
-                    } else {
-                        message = `Region: ${config.region} unavailable`;
-                        status_code = 404;
-                    }
-                } else {
-                    message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
-                    logger.error(message);
-                    status_code = accountPlayer;
+                    message = `Region: ${config.region} unavailable`;
+                    res.status(404);
                 }
             } else {
-                message = `Recent matches can't be more than 100`;
-                status_code = 400;
+                message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
+                logger.error(message);
+                res.status(accountPlayer);
             }
             return {
-                data: message,
-                status_code: status_code,
+                data: message
             };
         } catch (e) {
             logger.error(e);
             return {
-                data: e,
+                data: e
             };
         }
 
     }
 
+    // @Get('match')
+    // async match(@Query('page') page = 1,
+    //     @Query('pageSize') pageSize = 10,
+    //     @Res() res,
+    //     @Body() summoner) {
+    //     const skip = (page - 1) * pageSize;
+    //     const matches = await this.RecentMatchesService.findAllMatches(summoner.puuid, 0, skip, pageSize);
+    //     const total = await this.RecentMatchesService.countDB(summoner.puuid,);
+    //     const totalPages = Math.ceil(total / pageSize);
+
+    //     res.send({
+    //         meta: {
+    //             page,
+    //             pageSize,
+    //             total,
+    //             links: {
+    //                 first: `/recent-matches/matches?page=1&pageSize=${pageSize}`,
+    //                 last: `/recent-matches/matches?page=${totalPages}&pageSize=${pageSize}`,
+    //                 prev: `/recent-matches/matches?page=${page - 1}&pageSize=${pageSize}`,
+    //                 next: `/recent-matches/matches?page=${page + 1}&pageSize=${pageSize}`,
+    //             },
+    //         },
+    //         data: matches
+    //     });
+
+    // }
+
     @Get(':queueId')
-    async getMatchesByQueueId(@Param() params, @Body() config: RecentMatchesDto) {
+    async getMatchesByQueueId(
+        @Query('page') page = 1,
+        @Query('pageSize') pageSize = 10,
+        @Res() res,
+        @Param('queueId') queueId, @Body() config: RecentMatchesDto) {
         let message: string;
         let status_code: number;
         try {
-            if (config.recentMatches <= this.RECENT_MATCHES_MAX) {
-                const accountPlayer = await this.PlayerService.getPlayerAccount(
-                    config.summonerName,
-                    config.region,
-                );
-                if (accountPlayer) {
-                    const regionName = getRegionName(config.region);
-                    if (regionName) {
-                        const recentMatches = await this.RecentMatchesService.getRecentMatchesByQueueId(
-                            params.queueId,
-                            accountPlayer.puuid,
-                            regionName,
-                            config.recentMatches,
-                        );
-                        const data = await this.getRecentMatchesInfo(recentMatches, config.region);
-                        status_code = 200;
-                        return data;
 
+            if (!isQueueIdCorrect(queueId)) {
+                res.status(400);
+                res.send({
+                    data: `QueueID: ${queueId} is invalid`
+                });
+                return;
+            }
+            const accountPlayer = await this.PlayerService.getPlayerAccount(
+                config.summonerName,
+                config.region,
+            );
+            const regionName = getRegionName(config.region);
+            if (accountPlayer) {
+                if (regionName) {
+                    const skip = (page - 1) * pageSize;
+                    const total = await this.RecentMatchesService.countDB(accountPlayer.puuid, queueId);
+                    const totalPages = Math.ceil(total / pageSize);
+                    const matches = await this.RecentMatchesService.findAllMatches(accountPlayer.puuid, queueId, skip, pageSize);
+                    if (matches.length == 0) {
+
+                        res.status(200).send({
+                            data: `No recent matches played with queueId: ${queueId}`
+                        });
+                        // const recentMatches = await this.RecentMatchesService.getRecentMatchesByQueueId(
+                        //     queueId,
+                        //     accountPlayer.puuid,
+                        //     regionName,
+                        //     config.recentMatches,
+                        // );
+                        // await this.getRecentMatchesInfo(recentMatches, config.region);
                     } else {
-                        message = `Region: ${config.region} unavailable`;
-                        status_code = 404;
+
+                        res.status(200).send({
+                            meta: {
+                                page,
+                                pageSize,
+                                total,
+                                links: {
+                                    first: `/recent-matches?page=1&pageSize=${pageSize}`,
+                                    last: `/recent-matches?page=${totalPages}&pageSize=${pageSize}`,
+                                    prev: `/recent-matches?page=${page - 1}&pageSize=${pageSize}`,
+                                    next: `/recent-matches?page=${page + 1}&pageSize=${pageSize}`,
+                                },
+                            },
+                            data: matches
+                        });
                     }
                 } else {
                     message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
                     logger.error(message);
                     status_code = accountPlayer.idD;
                 }
-            } else {
-                message = `Recent matches can't be more than 100`;
-                status_code = 400;
             }
             return {
                 data: message,
@@ -143,7 +212,6 @@ export class RecentMatchesController {
         });
 
     }
-
 
 }
 

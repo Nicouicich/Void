@@ -1,10 +1,9 @@
-import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
 import { enviromentVars } from 'src/config/config';
 import { firstValueFrom } from 'rxjs';
 import { logger } from 'src/config/winston';
-import { Repository, ArrayContains } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 
 import { MatchEntity } from 'src/Entities/match.entity';
 import { IMatchParticipant } from '../interfaces/matchParticipant.interface';
@@ -23,7 +22,7 @@ export class RecentMatchesService {
         return this.matchRepo.save(newMatch);
     }
 
-    async getPlayerKDADB(puuid: string, queue: string | number): Promise<number> {
+    getPlayerKDADB = async (puuid: string, queue: string | number): Promise<number> => {
 
         const queueId = (typeof queue === 'string') ? this.getQueueId(queue) : queue;
         const matches = await this.getPlayerMatchesDB(puuid, queueId);
@@ -38,21 +37,27 @@ export class RecentMatchesService {
             });
         });
         return matches.length ? Math.trunc(kda / matches.length) : 0;
-    }
-
-    getPlayerMatchesDB = async (puuid: string, queueId: number) => {
-        if (queueId === 0) {
-            return await this.matchRepo.createQueryBuilder()
-                .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
-                .getMany();
-        } else {
-            return await this.matchRepo.createQueryBuilder()
-                .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
-                .getMany();
-        }
     };
 
-    getPlayerCSPerMinuteDB = async (puuid: string, queue: string | number) => {
+    getPlayerMatchesDB = async (puuid: string, queueId: number): Promise<MatchEntity[]> => {
+        if (queueId == 0) {
+            return await this.matchRepo.find({
+                where: {
+                    summonerids: Like(`%${puuid}%`)
+                },
+            });
+        } else {
+            return await this.matchRepo.find({
+                where: {
+                    summonerids: Like(`%${puuid}%`),
+                    queueId: queueId
+                },
+            });
+        }
+
+    };
+
+    getPlayerCSPerMinuteDB = async (puuid: string, queue: string | number): Promise<number> => {
         const queueId = (typeof queue === 'string') ? this.getQueueId(queue) : queue;
         const matches = await this.getPlayerMatchesDB(puuid, queueId);
 
@@ -84,19 +89,57 @@ export class RecentMatchesService {
         return matches.length ? Math.trunc(VisionScore / matches.length) : 0;
     };
 
-    async getRecentMatchesByQueueIdDB(queueId: number, puuid: string) {
-        if (queueId === 0) {
-            return await this.matchRepo.createQueryBuilder()
-                .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
-                .getMany();
+    // getRecentMatchesByQueueIdDB = async (queueId: number, puuid: string): Promise<MatchEntity[]> => {
+    //     if (queueId == 0) {
+    //         return await this.matchRepo.createQueryBuilder()
+    //             .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
+    //             .getMany();
 
+    //     } else {
+    //         return await this.matchRepo.createQueryBuilder()
+    //             .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
+    //             .andWhere({ queueId: queueId })
+    //             .getMany();
+    //     }
+    // };
+
+    findAllMatches = async (puuid: string, queueId: number, skip: number, take: number): Promise<MatchEntity[]> => {
+        if (queueId == 0) {
+            return await this.matchRepo.find({
+                where: {
+                    summonerids: Like(`%${puuid}%`)
+                },
+                skip: skip,
+                take: take,
+            });
         } else {
-            return await this.matchRepo.createQueryBuilder()
-                .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
-                .getMany();
+            return await this.matchRepo.find({
+                where: {
+                    summonerids: Like(`%${puuid}%`),
+                    queueId: queueId
+                },
+                skip: skip,
+                take: take,
+            });
         }
-    }
+    };
 
+    countDB = async (puuid: string, queueId: number): Promise<number> => {
+        if (queueId == 0) {
+            return this.matchRepo.count({
+                where: {
+                    summonerids: Like(`%${puuid}%`)
+                }
+            });
+        } else {
+            return this.matchRepo.count({
+                where: {
+                    summonerids: Like(`%${puuid}%`),
+                    queueId: queueId
+                }
+            });
+        }
+    };
 
     public getQueueId(name: string): number {
         let queueId: number;

@@ -1,18 +1,5 @@
 export const isQueueIdCorrect = (id: number) => {
-    let value: boolean = false;
-
-    switch (id) {
-        case 420:
-        case 440:
-        case 430:
-        case 400:
-        case 450:
-        case 0:
-            value = true;
-            break;
-    }
-
-    return value;
+    return (id == 420 || id == 430 || id == 440 || id == 450 || id == 400 || id == 0);
 };
 
 export const getQueueName = (id: number) => {

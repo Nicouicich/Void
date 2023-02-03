@@ -1,4 +1,4 @@
-import { Controller, Body, Get, Param } from '@nestjs/common';
+import { Controller, Body, Get, Param, Res } from '@nestjs/common';
 
 import { SummonerStatsDto } from './../Dto/summonerStats.dto';
 import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
@@ -79,17 +79,17 @@ export class PlayerController {
 
 
   @Get(':queueId')
-  async getPlayerByQueueId(@Param() params, @Body() summoner: SummonerDto) {
+  async getPlayerByQueueId(@Res() res, @Param('queueId') queueId: number, @Body() summoner: SummonerDto) {
     const regionName = getRegionName(summoner.region);
     let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName);
-    const queueId = parseInt(params.queueId);
     let matches;
 
     if (!isQueueIdCorrect(queueId)) {
-      return {
-        status: 400,
-        message: `QueueID: ${queueId} is invalid`
-      };
+      res.status(400);
+      res.send({
+        data: `QueueID: ${queueId} is invalid`
+      });
+      return
     }
 
     if (!account) {
@@ -97,14 +97,15 @@ export class PlayerController {
       account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName);
       matches = await this.RecentMatchesService.getRecentMatchesByQueueId(queueId, account.puuid, regionName);
     } else {
-      matches = await this.RecentMatchesService.getRecentMatchesByQueueIdDB(queueId, account.puuid);
+      matches = await this.RecentMatchesService.getPlayerMatchesDB(account.puuid, queueId);
     }
 
     if (matches.length === 0) {
-      return {
-        status: 400,
-        message: `Player has never played a game with the id:${queueId}`
-      };
+      res.status(400);
+      res.send({
+        data: `Player has never played a game with the id:${queueId}`
+      });
+
     }
 
 
