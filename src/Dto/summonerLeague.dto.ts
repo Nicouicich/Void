@@ -1,29 +1,29 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 export class SummonerLeagueDto {
-    @ApiProperty()
-    rank: string;
+  @ApiProperty()
+  rank: string;
 
-    @ApiProperty()
-    tier: string;
+  @ApiProperty()
+  tier: string;
 
-    @ApiProperty()
-    queueType: string;
+  @ApiProperty()
+  queueType: string;
 
-    @ApiProperty()
-    wins: number;
+  @ApiProperty()
+  wins: number;
 
-    @ApiProperty()
-    losses: number;
+  @ApiProperty()
+  losses: number;
 
-    @ApiProperty()
-    winrate: number;
+  @ApiProperty()
+  winrate: number;
 
-    @ApiProperty()
-    AverageCSPerMinute: number;
+  @ApiProperty()
+  AverageCSPerMinute: number;
 
-    @ApiProperty()
-    AverageKDA: number;
+  @ApiProperty()
+  AverageKDA: number;
 
-    @ApiProperty()
-    AverageVisionScore: number;
+  @ApiProperty()
+  AverageVisionScore: number;
 }

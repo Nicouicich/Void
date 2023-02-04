@@ -19,18 +19,23 @@ describe('PlayerController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PlayerController],
       imports: [HttpModule],
-      providers: [PlayerService, RecentMatchesService, databaseTestProvider,
+      providers: [
+        PlayerService,
+        RecentMatchesService,
+        databaseTestProvider,
         {
           provide: 'SUMMONER_STATS_REPOSITORY',
-          useFactory: (dataSource: DataSource) => dataSource.getRepository(SummonerStatsEntity),
+          useFactory: (dataSource: DataSource) =>
+            dataSource.getRepository(SummonerStatsEntity),
           inject: ['DATA_SOURCE'],
         },
         {
           provide: 'RECENT_MATCH_REPOSITORY',
-          useFactory: (dataSource: DataSource) => dataSource.getRepository(MatchEntity),
+          useFactory: (dataSource: DataSource) =>
+            dataSource.getRepository(MatchEntity),
           inject: ['DATA_SOURCE'],
-        }
-      ]
+        },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -38,7 +43,11 @@ describe('PlayerController', () => {
     controller = module.get<PlayerController>(PlayerController);
   });
 
-  afterEach(async () => {
+  // afterEach(async () => {
+  //   await app.close();
+  // });
+
+  afterAll(async () => {
     await app.close();
   });
 
@@ -51,13 +60,12 @@ describe('PlayerController', () => {
       .get('/player')
       .send({ summonerName: 'ET Murtgraf', region: 'la2' })
       .expect(200)
-      .then(response => {
+      .then((response) => {
         expect(response.body).toMatchObject({
           data: expect.objectContaining({
-            summonerName: 'ET Murtgraf'
-          })
+            summonerName: 'ET Murtgraf',
+          }),
         });
-
       });
   });
 
@@ -67,13 +75,11 @@ describe('PlayerController', () => {
       .get('/player')
       .send({ summonerName: 'nicop373', region: 'la2' })
       .expect(200)
-      .then(response => {
-
-        console.log(response);
+      .then((response) => {
         expect(response.body).toMatchObject({
           data: expect.objectContaining({
-            leagues: expect.arrayContaining([])
-          })
+            leagues: expect.arrayContaining([]),
+          }),
         });
       });
   });
@@ -84,15 +90,18 @@ describe('PlayerController', () => {
       .get('/player/420')
       .send({ summonerName: 'GIGACHAD PLAYER', region: 'br1' })
       .expect(200)
-      .then(response => {
-
-        expect(response.body).toEqual(expect.objectContaining({
-          data: expect.objectContaining({
-            leagues: expect.arrayContaining([expect.objectContaining({
-              queueType: "RANKED_SOLO_5x5"
-            })])
-          })
-        }));
+      .then((response) => {
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              leagues: expect.arrayContaining([
+                expect.objectContaining({
+                  queueType: 'RANKED_SOLO_5x5',
+                }),
+              ]),
+            }),
+          }),
+        );
       });
   });
 
@@ -102,15 +111,18 @@ describe('PlayerController', () => {
       .get('/player/440')
       .send({ summonerName: 'GIGACHAD PLAYER', region: 'br1' })
       .expect(200)
-      .then(response => {
-
-        expect(response.body).toEqual(expect.objectContaining({
-          data: expect.objectContaining({
-            leagues: expect.arrayContaining([expect.objectContaining({
-              queueType: "RANKED_FLEX_SR"
-            })])
-          })
-        }));
+      .then((response) => {
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              leagues: expect.arrayContaining([
+                expect.objectContaining({
+                  queueType: 'RANKED_FLEX_SR',
+                }),
+              ]),
+            }),
+          }),
+        );
       });
   });
 
@@ -133,8 +145,5 @@ describe('PlayerController', () => {
       .expect({
         data: `QueueID: 4110 is invalid`,
       });
-
   });
-
-
 });

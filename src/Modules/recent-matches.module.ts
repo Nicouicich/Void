@@ -9,13 +9,17 @@ import { RecentMatchesController } from 'src/Controllers/recent-matches.controll
 import { MatchEntity } from 'src/Entities/match.entity';
 
 @Module({
-  imports: [HttpModule, DatabaseModule,forwardRef(() => PlayerModule)],
+  imports: [HttpModule, DatabaseModule, forwardRef(() => PlayerModule)],
   controllers: [RecentMatchesController],
-  providers: [RecentMatchesService,{
-    provide: 'RECENT_MATCH_REPOSITORY',
-    useFactory: (dataSource: DataSource) => dataSource.getRepository(MatchEntity),
-    inject: ['DATA_SOURCE'],
-  },],
-  exports: [RecentMatchesService]
+  providers: [
+    RecentMatchesService,
+    {
+      provide: 'RECENT_MATCH_REPOSITORY',
+      useFactory: (dataSource: DataSource) =>
+        dataSource.getRepository(MatchEntity),
+      inject: ['DATA_SOURCE'],
+    },
+  ],
+  exports: [RecentMatchesService],
 })
 export class RecentMatchesModule {}

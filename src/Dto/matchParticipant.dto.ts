@@ -1,41 +1,39 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class MatchParticipantDto {
-    @ApiProperty()
-    puuid: string;
-    
-    @ApiProperty()
-    summonerName:string;
-    
-    @ApiProperty()
-    championName: string;
-    
-    @ApiProperty()
-    totalDamageDealt: number;
-    
-    @ApiProperty()
-    totalMinionsKilled: number;
-    
-    @ApiProperty()
-    csPerMinute: number;
+  @ApiProperty()
+  puuid: string;
 
+  @ApiProperty()
+  summonerName: string;
 
-    @ApiProperty()
-    visionScore: number;
+  @ApiProperty()
+  championName: string;
 
-    @ApiProperty()
-    kills: number;
+  @ApiProperty()
+  totalDamageDealt: number;
 
-    @ApiProperty()
-    assists: number;
+  @ApiProperty()
+  totalMinionsKilled: number;
 
-    @ApiProperty()
-    deaths: number;
+  @ApiProperty()
+  csPerMinute: number;
 
-    @ApiProperty()
-    kda: number;
+  @ApiProperty()
+  visionScore: number;
 
-    @ApiProperty()
-    win: boolean;
+  @ApiProperty()
+  kills: number;
 
-};
+  @ApiProperty()
+  assists: number;
+
+  @ApiProperty()
+  deaths: number;
+
+  @ApiProperty()
+  kda: number;
+
+  @ApiProperty()
+  win: boolean;
+}

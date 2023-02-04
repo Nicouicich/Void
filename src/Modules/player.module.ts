@@ -8,17 +8,18 @@ import { PlayerController } from '../Controllers/player.controller';
 import { PlayerService } from '../Services/player.service';
 import { RecentMatchesModule } from './recent-matches.module';
 
-
 @Module({
   imports: [HttpModule, DatabaseModule, forwardRef(() => RecentMatchesModule)],
   controllers: [PlayerController],
-  providers: [PlayerService,
+  providers: [
+    PlayerService,
     {
       provide: 'SUMMONER_STATS_REPOSITORY',
-      useFactory: (dataSource: DataSource) => dataSource.getRepository(SummonerStatsEntity),
+      useFactory: (dataSource: DataSource) =>
+        dataSource.getRepository(SummonerStatsEntity),
       inject: ['DATA_SOURCE'],
     },
   ],
-  exports: [PlayerService]
+  exports: [PlayerService],
 })
 export class PlayerModule {}
