@@ -1,6 +1,6 @@
 export interface IMatchParticipant {
-    puuid: string,
-    summonerName:string,
+    puuid: string;
+    summonerName:string;
     championName: string;
     totalDamageDealt: number;
     totalMinionsKilled: number;

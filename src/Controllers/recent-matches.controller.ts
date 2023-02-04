@@ -22,8 +22,16 @@ export class RecentMatchesController {
         @Query('pageSize') pageSize = 10,
         @Res() res,
         @Body() config: RecentMatchesDto) {
+        logger.log('info', `New call at the endpoint /recent-matches with query: ${page}, ${pageSize},
+            body ${config},`);
         let message: string;
         try {
+
+            if (page < 1 || pageSize < 2) {
+                res.status(400).send("Page needs to be higher than 1 and pageSize higher than 2");
+                return;
+            }
+
             let account = await this.PlayerService.getPlayerAccountDB(config.summonerName, config.region);
             let accountPlayer;
             //If the summoner i searched for does not exists, i create it
@@ -75,17 +83,56 @@ export class RecentMatchesController {
                 }
             } else {
                 message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
-                logger.error(message);
                 res.status(accountPlayer);
             }
             return {
                 data: message
             };
         } catch (e) {
-            logger.error(e);
             return {
                 data: e
             };
+        }
+
+    }
+
+
+    @Get('/new')
+    async getMoreMatches(
+        @Res() res,
+        @Body() config: RecentMatchesDto) {
+        logger.log('info', `New call at the endpoint /recent-matches/new,
+            body ${config.summonerName},
+            ${config.region}
+            ${config.recentMatches},`);
+        try {
+            if (config.recentMatches > 100 || config.recentMatches < 1) {
+                res.status(400).send(`New matches count must be between 1 and 100`);
+                return;
+            }
+            let account = await this.PlayerService.getPlayerAccountDB(config.summonerName, config.region);
+            if (account) {
+                const regionName = getRegionName(config.region);
+                if (regionName) {
+                    const recentMatches = await this.RecentMatchesService.getRecentMatches(
+                        account.puuid,
+                        regionName,
+                        config.recentMatches,
+                    );
+                    const data = await this.getRecentMatchesInfo(recentMatches, config.region);
+                    if (data) {
+                        res.status(200).send('New matches added');
+                    } else {
+                        res.status(500).send('No new matches could be added');
+                    }
+                } else {
+                    res.status(400).send(`Region: ${config.region} does not exists`);
+                }
+            } else {
+                res.status(404).send(`User: ${config.summonerName} does not exists in our database`);
+            }
+        } catch (e) {
+            return e;
         }
 
     }
@@ -96,6 +143,10 @@ export class RecentMatchesController {
         @Query('pageSize') pageSize = 10,
         @Res() res,
         @Param('queueId') queueId, @Body() config: RecentMatchesDto) {
+
+        logger.log('info', `New call at the endpoint /recent-matches/:queueId with query: ${page}, ${pageSize},
+        param: ${queueId}
+            body ${config},`);
         let message: string;
         let status_code: number;
         try {
@@ -125,17 +176,9 @@ export class RecentMatchesController {
                     const totalPages = Math.ceil(total / pageSize);
                     const matches = await this.RecentMatchesService.findAllMatches(accountPlayer.puuid, queueId, skip, pageSize);
                     if (matches.length == 0) {
-
                         res.status(200).send({
                             data: `No recent matches played with queueId: ${queueId}`
                         });
-                        // const recentMatches = await this.RecentMatchesService.getRecentMatchesByQueueId(
-                        //     queueId,
-                        //     accountPlayer.puuid,
-                        //     regionName,
-                        //     config.recentMatches,
-                        // );
-                        // await this.getRecentMatchesInfo(recentMatches, config.region);
                     } else {
 
                         res.status(200).send({
@@ -165,7 +208,6 @@ export class RecentMatchesController {
             );
             return;
         } catch (e) {
-            logger.error(e);
             return {
                 data: e,
             };
@@ -173,24 +215,32 @@ export class RecentMatchesController {
 
     }
 
-    private async getRecentMatchesInfo(recentMatches: string[], region: string) {
-        const regionName = getRegionName(region);
-        let matchesInfo = recentMatches.map(async (matchID: string) => {
-            return await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName);
-        });
-        const matches = await Promise.all(matchesInfo).then(data => {
-            return data;
-        });
+    private getRecentMatchesInfo = async (recentMatches: string[], region: string) => {
+        try {
+            const regionName = getRegionName(region);
 
-        // Save the matches in the DB
-        const data = matches.map(async (match: any) => {
-            return await this.RecentMatchesService.createMatch(match);
-        });
+            const promises = recentMatches.map((matchID, index) => {
+                return new Promise(resolve => {
+                    setTimeout(async () => {
+                        resolve(await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName));
+                    }, 2000);
+                });
+            });
+            const matches = await Promise.all(promises);
 
-        return await Promise.all(data).then(data => {
-            return data;
-        });
 
-    }
+            // Save the matches in the DB
+            const data = matches.map(async (match: any) => {
+                return await this.RecentMatchesService.createMatch(match);
+            });
+
+            return await Promise.all(data).then(data => {
+                return data;
+            });
+        } catch (e) {
+            logger.log('error', e);
+            return null;
+        }
+    };
 
 }

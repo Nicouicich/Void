@@ -89,20 +89,6 @@ export class RecentMatchesService {
         return matches.length ? Math.trunc(VisionScore / matches.length) : 0;
     };
 
-    // getRecentMatchesByQueueIdDB = async (queueId: number, puuid: string): Promise<MatchEntity[]> => {
-    //     if (queueId == 0) {
-    //         return await this.matchRepo.createQueryBuilder()
-    //             .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
-    //             .getMany();
-
-    //     } else {
-    //         return await this.matchRepo.createQueryBuilder()
-    //             .where(":puuid = ANY ( string_to_array(summonerids, ','))", { puuid: puuid })
-    //             .andWhere({ queueId: queueId })
-    //             .getMany();
-    //     }
-    // };
-
     findAllMatches = async (puuid: string, queueId: number, skip: number, take: number): Promise<MatchEntity[]> => {
         if (queueId == 0) {
             return await this.matchRepo.find({
@@ -204,11 +190,14 @@ export class RecentMatchesService {
     public async getInfoAboutAMatch(matchID: string, region: string): Promise<MatchEntity> {
         try {
             const url = `https://${region}.api.riotgames.com/lol/match/v5/matches/${matchID}?api_key=${enviromentVars.LOL_API_KEY}`;
+
             const response = await firstValueFrom(this.HttpService.get(url));
             if (response) {
                 const gameDuration = response.data.info.gameDuration;
                 const queueId = response.data.info.queueId;
                 const participants: IMatchParticipant[] = response.data.info.participants.map(participantInfo => {
+                    let kda = participantInfo.deaths ? Math.trunc((participantInfo.kills + participantInfo.assists) / participantInfo.deaths)
+                        : participantInfo.kills + participantInfo.assists;
                     let participant: IMatchParticipant = {
                         puuid: participantInfo.puuid,
                         summonerName: participantInfo.summonerName,
@@ -220,7 +209,7 @@ export class RecentMatchesService {
                         kills: participantInfo.kills,
                         assists: participantInfo.assists,
                         deaths: participantInfo.deaths,
-                        kda: participantInfo.challenges.kda,
+                        kda: kda,
                         win: participantInfo.win
                     };
                     return participant;
@@ -231,7 +220,7 @@ export class RecentMatchesService {
         }
 
         catch (e) {
-
+            logger.log('error', e);
         }
     }
 }

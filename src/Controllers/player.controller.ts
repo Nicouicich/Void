@@ -9,6 +9,8 @@ import { RecentMatchesService } from 'src/Services/recent-matches.service';
 import { getRegionName } from 'src/utils/queueType';
 import { isQueueIdCorrect } from 'src/utils/queueType';
 import { getQueueName } from 'src/utils/queueType';
+import { logger } from 'src/config/winston';
+
 
 
 @Controller('player')
@@ -22,98 +24,86 @@ export class PlayerController {
   @Get()
   async getPlayer(@Res() res,
     @Body() summoner: SummonerDto) {
-    //First I check if the user exists in my database
-    let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
-    if (account) {
-      const leagues = await Promise.all(
-        account.leagues.map(async (league) => {
-          league.AverageVisionScore = await this.RecentMatchesService.getPlayerVisionScoreDB(account.puuid, league.queueType);
-          league.AverageCSPerMinute = await this.RecentMatchesService.getPlayerCSPerMinuteDB(account.puuid, league.queueType);
-          league.AverageKDA = await this.RecentMatchesService.getPlayerKDADB(account.puuid, league.queueType);
-          return league;
-        })
-      ).then(data => {
-        return data;
-      });
-      account.leagues = leagues;
-      return account;
-    } else {
-      //The user does not exists in my database, so I search for it in the lol api
-      const accountPlayer = await this.PlayerService.getPlayerAccount(summoner.summonerName, summoner.region);
-      if (accountPlayer) {
-        const regionName = getRegionName(summoner.region);
-        //create the new player and save it in the database
-        let leagues: ISummonerLeague[] = await this.PlayerService.getPlayerStats(accountPlayer.id, summoner.region);
-
-        const player = new SummonerStatsEntity(summoner.summonerName, accountPlayer.puuid, accountPlayer.id, accountPlayer.summonerLevel, summoner.region, accountPlayer.profileIconId, leagues);
-        await this.PlayerService.createPlayerDB(player);
-
-        //search for recent matches of the player created
-        const recentMatches = await this.RecentMatchesService.getRecentMatches(accountPlayer.puuid, regionName, 20);
-
-        //this is in case the user has not played any games yet
-        recentMatches.length > 0 ? await this.getRecentMatchesInfo(recentMatches, summoner.region) : null;
-        if (leagues.length) {
-          leagues = await Promise.all(
-            leagues.map(async (league) => {
-              league.AverageVisionScore = await this.RecentMatchesService.getPlayerVisionScoreDB(accountPlayer.puuid, league.queueType);
-              league.AverageCSPerMinute = await this.RecentMatchesService.getPlayerCSPerMinuteDB(accountPlayer.puuid, league.queueType);
-              league.AverageKDA = await this.RecentMatchesService.getPlayerKDADB(accountPlayer.puuid, league.queueType);
-              return league;
-            })
-          ).then(data => {
-            return data;
-          });
-
-        }
-        const summonerDto = new SummonerStatsDto(summoner.summonerName, summoner.region, accountPlayer.profileIconId, accountPlayer.summonerLevel, leagues);
-
-        return summonerDto;
-      } else {
-        res.status(500).send({
-          data: `Could not retrieve a player with summoner name: ${summoner.summonerName} and region: ${summoner.region}`,
+    try {
+      logger.log('info', `New call at the endpoint /player/ with body:${summoner}`);
+      let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
+      if (account) {
+        const leagues = await Promise.all(
+          account.leagues.map(async (league) => {
+            league.AverageVisionScore = await this.RecentMatchesService.getPlayerVisionScoreDB(account.puuid, league.queueType);
+            league.AverageCSPerMinute = await this.RecentMatchesService.getPlayerCSPerMinuteDB(account.puuid, league.queueType);
+            league.AverageKDA = await this.RecentMatchesService.getPlayerKDADB(account.puuid, league.queueType);
+            return league;
+          })
+        ).then(data => {
+          return data;
         });
-        return;
+        account.leagues = leagues;
+        return account;
+      } else {
+        const accountPlayer = await this.createPlayer(summoner.summonerName, summoner.region);
+        if (accountPlayer) {
+
+          const summonerDto = new SummonerStatsDto(summoner.summonerName, summoner.region, accountPlayer.profileIconId, accountPlayer.summonerLevel, accountPlayer.leagues);
+          res.status(200).send(summonerDto);
+        } else {
+          res.status(404).send({
+            data: `Summoner name: ${summoner.summonerName} and region: ${summoner.region} does not exists`,
+          });
+          return;
+        }
       }
+    } catch (e) {
+      res.status(500).send(e);
     }
+
   }
 
   @Get(':queueId')
   async getPlayerByQueueId(@Res() res, @Param('queueId') queueId: number, @Body() summoner: SummonerDto) {
-    const regionName = getRegionName(summoner.region);
-    let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
-    let matches;
+    try {
+      logger.log('info', `New call at the endpoint /player/:queueId with params:
+      ${queueId},
+      and body: ${summoner}`);
+      let matches;
 
-    if (!isQueueIdCorrect(queueId)) {
-      res.status(400);
-      res.send({
-        data: `QueueID: ${queueId} is invalid`
-      });
-      return;
+      if (!isQueueIdCorrect(queueId)) {
+        res.status(400);
+        res.send({
+          data: `QueueID: ${queueId} is invalid`
+        });
+        return;
+      }
+      let account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
+
+      if (!account) {
+        account = await this.createPlayer(summoner.summonerName, summoner.region);
+        if (!account) {
+          res.status(404).send({
+            data: `User with name ${summoner.summonerName} and region ${summoner.region} does not exists`
+          });
+        }
+      }
+      matches = await this.RecentMatchesService.getPlayerMatchesDB(account.puuid, queueId);
+
+      if (matches.length === 0) {
+        res.status(400);
+        res.send({
+          data: `Player does not have any recent game with the id:${queueId}`
+        });
+        return;
+      }
+      account.leagues = await this.getPlayerLeague(account.puuid, queueId, summoner.summonerName, summoner.region);
+      res.status(200).send(
+        { data: account });
+    } catch (e) {
+      res.status(500).send(e);
+
     }
-
-    if (!account) {
-      await this.getPlayer(res, summoner);
-      account = await this.PlayerService.getPlayerAccountDB(summoner.summonerName, summoner.region);
-      await this.RecentMatchesService.getRecentMatches(account.puuid, regionName);
-    }
-    matches = await this.RecentMatchesService.getPlayerMatchesDB(account.puuid, queueId);
-
-    if (matches.length === 0) {
-      res.status(400);
-      res.send({
-        data: `Player does not have any recent game with the id:${queueId}`
-      });
-      return;
-    }
-
-    account.leagues = await this.getPlayerLeague(account.puuid, queueId, summoner.summonerName, summoner.region);
-    res.status(200).send(
-      { data: account });
 
   }
 
-  getPlayerLeague = async (puuid: string, queueId: number, summonerName: string, region: string): Promise<ISummonerLeague[]> => {
+  private getPlayerLeague = async (puuid: string, queueId: number, summonerName: string, region: string): Promise<ISummonerLeague[]> => {
 
     const matches = await this.RecentMatchesService.getPlayerMatchesDB(puuid, queueId);
     const queueName = getQueueName(queueId);
@@ -133,7 +123,6 @@ export class PlayerController {
       const player = await this.PlayerService.getPlayerAccountDB(summonerName, region);
 
       const league = player.leagues.filter((element) => element.queueType == queueName);
-      console.log(league);
       if (league.length == 0) {
         return league;
       }
@@ -162,24 +151,68 @@ export class PlayerController {
     return [summonerLeagues];
   };
 
-  getRecentMatchesInfo = async (recentMatches: string[], region: string) => {
-    const regionName = getRegionName(region);
-    let matchesInfo = recentMatches.map(async (matchID: string) => {
-      return await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName);
-    });
-    const matches = await Promise.all(matchesInfo).then(data => {
-      return data;
-    });
+  private getRecentMatchesInfo = async (recentMatches: string[], region: string) => {
+    try {
+      const regionName = getRegionName(region);
+      let matchesInfo = recentMatches.map(async (matchID: string) => {
+        return await this.RecentMatchesService.getInfoAboutAMatch(matchID, regionName);
+      });
+      const matches = await Promise.all(matchesInfo).then(data => {
+        return data;
+      });
 
-    // Save the matches in the DB
-    const data = matches.map(async (match: any) => {
-      return await this.RecentMatchesService.createMatch(match);
-    });
+      // Save the matches in the DB
 
-    return await Promise.all(data).then(data => {
-      return data;
-    });
+      const data = matches.map(async (match: any) => {
+        return await this.RecentMatchesService.createMatch(match);
+      });
+
+      return await Promise.all(data).then(data => {
+        return data;
+      });
+    }
+    catch (e) {
+      return (e);
+    }
+
 
   };
 
-}
+  private createPlayer = async (summonerName: string, region: string,) => {
+    try {
+      const accountPlayer = await this.PlayerService.getPlayerAccount(summonerName, region);
+      if (accountPlayer) {
+        const regionName = getRegionName(region);
+        let leagues: ISummonerLeague[] = await this.PlayerService.getPlayerStats(accountPlayer.id, region);
+
+        const player = new SummonerStatsEntity(summonerName, accountPlayer.puuid, accountPlayer.id, accountPlayer.summonerLevel, region, accountPlayer.profileIconId, leagues);
+        await this.PlayerService.createPlayerDB(player);
+
+        const recentMatches = await this.RecentMatchesService.getRecentMatches(accountPlayer.puuid, regionName, 20);
+
+        recentMatches.length > 0 ? await this.getRecentMatchesInfo(recentMatches, region) : null;
+        if (leagues.length) {
+          leagues = await Promise.all(
+            leagues.map(async (league) => {
+              league.AverageVisionScore = await this.RecentMatchesService.getPlayerVisionScoreDB(accountPlayer.puuid, league.queueType);
+              league.AverageCSPerMinute = await this.RecentMatchesService.getPlayerCSPerMinuteDB(accountPlayer.puuid, league.queueType);
+              league.AverageKDA = await this.RecentMatchesService.getPlayerKDADB(accountPlayer.puuid, league.queueType);
+              return league;
+            })
+          ).then(data => {
+            return data;
+          });
+        }
+        accountPlayer.leagues = leagues;
+        return accountPlayer;
+
+      }
+    } catch (e) {
+      return null;
+
+    }
+    return false;
+  };
+};
+
+

@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { Repository } from 'typeorm';
+import { Not, Repository, MoreThan, And, IsNull, FindOperator } from 'typeorm';
 
 import { enviromentVars } from 'src/config/config';
 import { logger } from 'src/config/winston';
@@ -29,6 +29,15 @@ export class PlayerService {
         const response = this.playerRepo.findOneBy({ summonerName: name, region: region });
         return response;
     }
+
+    getPlayersWithLeagueDB = async () => {
+        return await this.playerRepo
+            .createQueryBuilder()
+            .where(`leagues IS NOT NULL`)
+            .andWhere(`leagues != '[]'`)
+            .getMany();
+    };
+
 
     public async getPlayerStats(summonerID: string, region: string) {
         try {
@@ -79,14 +88,9 @@ export class PlayerService {
             const response = await firstValueFrom(this.HttpService.get(url));
             return response.data;
         } catch (e) {
-            const message = `Error while requesting an account player by name. Probably cause: ${e}
-            Check API Key`;
-            logger.error(message);
-            return {
-                message: message,
-                response: e.cause,
-            };
+            logger.log('info', `Error while requesting an account player by name. Probably cause: ${e}
+            Check API Key`);
+            return null;
         }
     }
-
 }
