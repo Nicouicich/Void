@@ -1,12 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class LeaderboardDTO {
+class Stats {
     @ApiProperty()
-    leaderboard: StatsLeaderboard[];
-
-    constructor(stats: StatsLeaderboard[]) {
-        this.leaderboard = stats;
-    }
+    leaguePoints: {
+        top: 'number';
+    };
+    @ApiProperty()
+    winRate: {
+        top: 'number';
+    };
 }
 
 export class StatsLeaderboard {
@@ -16,7 +18,7 @@ export class StatsLeaderboard {
     @ApiProperty()
     region: string;
 
-    @ApiProperty()
+    @ApiProperty({ type: Stats })
     stats: {
         leaguePoints: { top: number; },
         winRate: { top: number; },
@@ -32,3 +34,16 @@ export class StatsLeaderboard {
         this.region = region;
     }
 }
+
+export class LeaderboardDto {
+    @ApiProperty({ type: [StatsLeaderboard] })
+    leaderboard: StatsLeaderboard[];
+
+    constructor(stats: StatsLeaderboard[]) {
+        this.leaderboard = stats;
+    }
+}
+
+
+
+

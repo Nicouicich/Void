@@ -1,22 +1,29 @@
-import { IMatchParticipant } from '../interfaces/matchParticipant.interface';
+import { MatchParticipantDto } from './../Dto/matchParticipant.dto';
+import { ApiProperty } from "@nestjs/swagger";
 import { Entity, Column, PrimaryColumn } from "typeorm";
 
+import { IMatchParticipant } from '../interfaces/matchParticipant.interface';
 
 @Entity()
 export class MatchEntity {
 
+    @ApiProperty()
     @PrimaryColumn({ unique: true })
     matchId: string;
 
+    @ApiProperty()
     @Column()
     gameDuration: number;
 
+    @ApiProperty({type: [MatchParticipantDto]})
     @Column("jsonb")
     participants: IMatchParticipant[];
 
+    @ApiProperty()
     @Column("simple-array")
     summonerids: string[];
 
+    @ApiProperty()
     @Column()
     queueId: number;
 

@@ -1,6 +1,8 @@
+import { MatchEntity } from 'src/Entities/match.entity';
 import { Controller, Body, Get, Param, Query, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiProduces, ApiBody } from '@nestjs/swagger';
 
-import { RecentMatchesDto } from './../Dto/recent-matches.dto';
+import { NewMatchesDto, RecentMatchesDto } from './../Dto/recent-matches.dto';
 import { RecentMatchesService } from './../Services/recent-matches.service';
 import { PlayerService } from 'src/Services/player.service';
 import { logger } from 'src/config/winston';
@@ -8,6 +10,10 @@ import { getRegionName, isQueueIdCorrect } from 'src/utils/queueType';
 import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
 import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
 
+
+
+
+@ApiTags('Recent Matches')
 @Controller('recent-matches')
 export class RecentMatchesController {
 
@@ -18,6 +24,14 @@ export class RecentMatchesController {
     ) {}
 
     @Get()
+    @ApiOperation({ summary: 'Get the recent matches from a user stored in the database.' })
+    @ApiResponse({ status: 200, description: 'Recent matches from the player', type: MatchEntity })
+    @ApiResponse({ status: 400, description: 'Page < 1, pageSize <1' })
+    @ApiQuery({ name: 'page', description: "Higher than 1" })
+    @ApiQuery({ name: 'pageSize', description: "Higher than 1" })
+    @ApiBody({ type: RecentMatchesDto })
+    @ApiProduces('application/json')
+
     async getRecentMatches(@Query('page') page = 1,
         @Query('pageSize') pageSize = 10,
         @Res() res,
@@ -27,11 +41,11 @@ export class RecentMatchesController {
         let message: string;
         try {
 
-            if (page < 1 || pageSize < 2) {
-                res.status(400).send("Page needs to be higher than 1 and pageSize higher than 2");
+            if (page < 1 || pageSize < 1) {
+                res.status(400).send("Page and pagesize needs to be higher than 1");
                 return;
             }
-
+            const regionName = getRegionName(config.region);
             let account = await this.PlayerService.getPlayerAccountDB(config.summonerName, config.region);
             let accountPlayer;
             //If the summoner i searched for does not exists, i create it
@@ -40,6 +54,15 @@ export class RecentMatchesController {
                     config.summonerName,
                     config.region,
                 );
+                if (!accountPlayer) {
+                    res.status(404).send(`Summoner with name: ${config.summonerName} and region: ${config.region} does not exists`);
+                    return;
+                }
+                const recentMatches = await this.RecentMatchesService.getRecentMatches(
+                    accountPlayer.puuid,
+                    regionName,
+                );
+                await this.getRecentMatchesInfo(recentMatches, config.region);
                 const leagues: ISummonerLeague[] = await this.PlayerService.getPlayerStats(accountPlayer.id, config.region);
                 const player = new SummonerStatsEntity(config.summonerName, accountPlayer.puuid, accountPlayer.id, accountPlayer.summonerLevel, config.region, accountPlayer.profileIconId, leagues);
                 await this.PlayerService.createPlayerDB(player);
@@ -47,14 +70,13 @@ export class RecentMatchesController {
                 accountPlayer = account;
             }
             if (accountPlayer) {
-                const regionName = getRegionName(config.region);
                 if (regionName) {
-                    const recentMatches = await this.RecentMatchesService.getRecentMatches(
-                        accountPlayer.puuid,
-                        regionName,
-                        config.recentMatches,
-                    );
-                    const data = await this.getRecentMatchesInfo(recentMatches, config.region);
+                    // const recentMatches = await this.RecentMatchesService.getRecentMatches(
+                    //     accountPlayer.puuid,
+                    //     regionName,
+                    // );
+                    // const data = await this.getRecentMatchesInfo(recentMatches, config.region);
+                    // const recentMatches = await this.RecentMatchesService.getPlayerMatchesDB(accountPlayer.puuid, 0);
 
                     const skip = (page - 1) * pageSize;
                     const matches = await this.RecentMatchesService.findAllMatches(accountPlayer.puuid, 0, skip, pageSize);
@@ -76,7 +98,6 @@ export class RecentMatchesController {
                         data: matches
                     });
 
-                    return data;
                 } else {
                     message = `Region: ${config.region} unavailable`;
                     res.status(404);
@@ -93,14 +114,114 @@ export class RecentMatchesController {
                 data: e
             };
         }
-
     }
 
+    @Get(':queueId')
+    @ApiOperation({ summary: 'Get the recent matches filter by queueId from a user stored in the database.' })
+    @ApiResponse({ status: 200, description: 'Recent matches from the player', type: MatchEntity })
+    @ApiResponse({ status: 400, description: 'Page < 1, pageSize <1' })
+    @ApiQuery({ name: 'page', description: "Higher than 1" })
+    @ApiQuery({ name: 'pageSize', description: "Higher than 1" })
+    @ApiBody({ type: RecentMatchesDto })
+    @ApiProduces('application/json')
+
+    async getMatchesByQueueId(@Query('page') page = 1,
+        @Query('pageSize') pageSize = 10,
+        @Res() res,
+        @Param('queueId') queueId,
+        @Body() config: RecentMatchesDto) {
+        logger.log('info', `New call at the endpoint /recent-matches/:queueId with query: ${page}, ${pageSize},
+        param: ${queueId},
+        body ${config},`);
+        let message: string;
+
+        try {
+
+            if (!isQueueIdCorrect(queueId)) {
+                res.status(400);
+                res.send({
+                    data: `QueueID: ${queueId} is invalid`
+                });
+                return;
+            }
+
+            if (page < 1 || pageSize < 1) {
+                res.status(400).send("Page and pagesize needs to be higher than 1 ");
+                return;
+            }
+            const regionName = getRegionName(config.region);
+            let account = await this.PlayerService.getPlayerAccountDB(config.summonerName, config.region);
+            let accountPlayer;
+            //If the summoner i searched for does not exists, i create it
+            if (!account) {
+                accountPlayer = await this.PlayerService.getPlayerAccount(
+                    config.summonerName,
+                    config.region,
+                );
+                if (!accountPlayer) {
+                    res.status(404).send(`Summoner with name: ${config.summonerName} and region: ${config.region} does not exists`);
+                    return;
+                }
+                const recentMatches = await this.RecentMatchesService.getRecentMatches(
+                    accountPlayer.puuid,
+                    regionName,
+                );
+                await this.getRecentMatchesInfo(recentMatches, config.region);
+                const leagues: ISummonerLeague[] = await this.PlayerService.getPlayerStats(accountPlayer.id, config.region);
+                const player = new SummonerStatsEntity(config.summonerName, accountPlayer.puuid, accountPlayer.id, accountPlayer.summonerLevel, config.region, accountPlayer.profileIconId, leagues);
+                await this.PlayerService.createPlayerDB(player);
+            } else {
+                accountPlayer = account;
+            }
+            if (accountPlayer) {
+                if (regionName) {
+                    const skip = (page - 1) * pageSize;
+                    const matches = await this.RecentMatchesService.findAllMatches(accountPlayer.puuid, queueId, skip, pageSize);
+                    const total = await this.RecentMatchesService.countDB(accountPlayer.puuid, 0);
+                    const totalPages = Math.ceil(total / pageSize);
+                    res.status(200);
+                    res.send({
+                        meta: {
+                            page,
+                            pageSize,
+                            total,
+                            links: {
+                                first: `/recent-matches/${queueId}?page=1&pageSize=${pageSize}`,
+                                last: `/recent-matches/${queueId}?page=${totalPages}&pageSize=${pageSize}`,
+                                prev: `/recent-matches/${queueId}?page=${page - 1}&pageSize=${pageSize}`,
+                                next: `/recent-matches/${queueId}?page=${page + 1}&pageSize=${pageSize}`,
+                            },
+                        },
+                        data: matches
+                    });
+
+                } else {
+                    message = `Region: ${config.region} unavailable`;
+                    res.status(404);
+                }
+            } else {
+                message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
+                res.status(404);
+            }
+            return {
+                data: message
+            };
+        } catch (e) {
+            return {
+                data: e
+            };
+        }
+    }
 
     @Get('/new')
+    @ApiOperation({ summary: 'Create new matches for a user.' })
+    @ApiResponse({ status: 200, description: 'New matches added' })
+    @ApiResponse({ status: 400, description: '0 < RecentMatches < 100' })
+    @ApiBody({ type: NewMatchesDto })
+    @ApiProduces('application/json')
     async getMoreMatches(
         @Res() res,
-        @Body() config: RecentMatchesDto) {
+        @Body() config: NewMatchesDto) {
         logger.log('info', `New call at the endpoint /recent-matches/new,
             body ${config.summonerName},
             ${config.region}
@@ -133,84 +254,6 @@ export class RecentMatchesController {
             }
         } catch (e) {
             return e;
-        }
-
-    }
-
-    @Get(':queueId')
-    async getMatchesByQueueId(
-        @Query('page') page = 1,
-        @Query('pageSize') pageSize = 10,
-        @Res() res,
-        @Param('queueId') queueId, @Body() config: RecentMatchesDto) {
-
-        logger.log('info', `New call at the endpoint /recent-matches/:queueId with query: ${page}, ${pageSize},
-        param: ${queueId}
-            body ${config},`);
-        let message: string;
-        let status_code: number;
-        try {
-
-            if (!isQueueIdCorrect(queueId)) {
-                res.status(400);
-                res.send({
-                    data: `QueueID: ${queueId} is invalid`
-                });
-                return;
-            }
-            let accountPlayer = await this.PlayerService.getPlayerAccountDB(
-                config.summonerName,
-                config.region,
-            );
-            const regionName = getRegionName(config.region);
-            if (!accountPlayer) {
-                accountPlayer = await this.PlayerService.getPlayerAccount(config.summonerName, config.region);
-            }
-            if (!accountPlayer) {
-                message = `User with summoner name: ${config.summonerName} and region: ${config.region} does not exists`;
-                status_code = 404;
-            } else {
-                if (regionName) {
-                    const skip = (page - 1) * pageSize;
-                    const total = await this.RecentMatchesService.countDB(accountPlayer.puuid, queueId);
-                    const totalPages = Math.ceil(total / pageSize);
-                    const matches = await this.RecentMatchesService.findAllMatches(accountPlayer.puuid, queueId, skip, pageSize);
-                    if (matches.length == 0) {
-                        res.status(200).send({
-                            data: `No recent matches played with queueId: ${queueId}`
-                        });
-                    } else {
-
-                        res.status(200).send({
-                            meta: {
-                                page,
-                                pageSize,
-                                total,
-                                links: {
-                                    first: `/recent-matches?page=1&pageSize=${pageSize}`,
-                                    last: `/recent-matches?page=${totalPages}&pageSize=${pageSize}`,
-                                    prev: `/recent-matches?page=${page - 1}&pageSize=${pageSize}`,
-                                    next: `/recent-matches?page=${page + 1}&pageSize=${pageSize}`,
-                                },
-                            },
-                            data: matches
-                        });
-                    }
-                } else {
-                    message = `Region: ${config.region} does not exists`;
-                    status_code = 400;
-                }
-            }
-            res.status(status_code).send(
-                {
-                    data: message,
-                }
-            );
-            return;
-        } catch (e) {
-            return {
-                data: e,
-            };
         }
 
     }

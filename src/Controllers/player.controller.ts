@@ -1,4 +1,5 @@
 import { Controller, Body, Get, Param, Res } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiQuery, ApiBody, ApiProduces, ApiTags } from '@nestjs/swagger';
 
 import { SummonerStatsDto } from './../Dto/summonerStats.dto';
 import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
@@ -12,16 +13,22 @@ import { getQueueName } from 'src/utils/queueType';
 import { logger } from 'src/config/winston';
 
 
-
+@ApiTags('Players')
 @Controller('player')
 export class PlayerController {
-  leagues = [420, 440, 430, 400, 450,];
+  leagues = [420, 440, 430, 400, 450, 900];
 
   constructor(private PlayerService: PlayerService,
     private RecentMatchesService: RecentMatchesService,
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get the stats for a user.' })
+  @ApiResponse({ status: 200, description: 'Get user stats', type: SummonerStatsEntity })
+  @ApiResponse({ status: 400, description: 'For example: Player:ET Murtgrafa or region: la4' })
+  @ApiBody({ type: SummonerDto })
+  @ApiProduces('application/json')
+
   async getPlayer(@Res() res,
     @Body() summoner: SummonerDto) {
     try {
@@ -60,6 +67,11 @@ export class PlayerController {
   }
 
   @Get(':queueId')
+  @ApiOperation({ summary: 'Get player stats filtered by queueId.' })
+  @ApiResponse({ status: 200, description: 'Recent matches from the player filtered by queueId', type: SummonerStatsEntity })
+  @ApiResponse({ status: 400, description: 'queueId!= 420, queueId != 440, non-existent region or non-existent user' })
+  @ApiQuery({ name: 'queueId', description: "Higher than 1" })
+  @ApiProduces('application/json')
   async getPlayerByQueueId(@Res() res, @Param('queueId') queueId: number, @Body() summoner: SummonerDto) {
     try {
       logger.log('info', `New call at the endpoint /player/:queueId with params:
@@ -209,7 +221,6 @@ export class PlayerController {
       }
     } catch (e) {
       return null;
-
     }
     return false;
   };

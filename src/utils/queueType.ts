@@ -37,7 +37,13 @@ export const getQueueName = (id: number): string => {
                     if (id == 450) {
                         value = 'ARAM';
                     } else {
-                        value = 'ALL';
+                        if (id == 0) {
+                            value = 'ALL';
+                        } else {
+                            if (id == 900) {
+                                value = 'URF';
+                            }
+                        }
                     }
 
                 }
@@ -48,6 +54,8 @@ export const getQueueName = (id: number): string => {
     }
     return value;
 };
+
+
 
 export function getRegionName(region: string): string | null {
     region = region.toUpperCase();

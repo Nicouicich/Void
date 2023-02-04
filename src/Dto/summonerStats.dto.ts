@@ -1,5 +1,6 @@
-import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
 import { ApiProperty } from '@nestjs/swagger';
+
+import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
 
 export class SummonerStatsDto {
     @ApiProperty()

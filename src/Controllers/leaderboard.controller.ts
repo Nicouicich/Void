@@ -1,12 +1,13 @@
-import { StatsLeaderboard, LeaderboardDTO } from './../Dto/leaderboard.dto';
-import { getQueueName } from 'src/utils/queueType';
 import { Controller, Get, Param, Res } from '@nestjs/common';
+import { ApiOperation, ApiProduces, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { StatsLeaderboard, LeaderboardDto } from './../Dto/leaderboard.dto';
+import { getQueueName } from 'src/utils/queueType';
 import { PlayerService } from 'src/Services/player.service';
 import { logger } from 'src/config/winston';
 import { getTierValue, getRankValue } from 'src/utils/tiers';
 
-
+@ApiTags('Leaderboard')
 @Controller('leaderboard')
 export class LeaderboardController {
 
@@ -15,7 +16,12 @@ export class LeaderboardController {
     ) {}
 
     @Get(':queueId')
-    async getnames(@Res() res, @Param('queueId') queueId) {
+    @ApiOperation({ summary: 'Get the leaderboard from the users stored in the database.' })
+    @ApiResponse({ status: 200, description: 'The leaderboard filter by queueid', type: LeaderboardDto })
+    @ApiResponse({ status: 400, description: 'QueueId not valid' })
+    @ApiQuery({ name: 'queueId', enum: [420, 440] })
+    @ApiProduces('application/json')
+    async getnames(@Res() res, @Param('queueId') queueId: number) {
         try {
             logger.log('info', `New call at the endpoint leaderboard/${queueId}`);
             let queueName;
@@ -38,7 +44,7 @@ export class LeaderboardController {
                 return b.leagues[0].winrate - a.leagues[0].winrate;
             });
 
-            const leaderboard = new LeaderboardDTO([]);
+            const leaderboard = new LeaderboardDto([]);
 
             playersWinrate.map((player, index) => {
                 const stats = new StatsLeaderboard(player.summonerName, 0, index + 1, player.region);

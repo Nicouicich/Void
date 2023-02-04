@@ -1,27 +1,37 @@
 import { Entity, Column, PrimaryColumn } from "typeorm";
+import { ApiProperty } from "@nestjs/swagger";
+
 import { ISummonerLeague } from './../interfaces/summonerLeagues.interface';
+import { SummonerLeagueDto } from "src/Dto/summonerLeague.dto";
 
 @Entity()
 export class SummonerStatsEntity {
 
+  @ApiProperty()
   @PrimaryColumn({ unique: true })
   id: string;
 
+  @ApiProperty()
   @Column()
   summonerName: string;
 
+  @ApiProperty()
   @Column()
   puuid: string;
 
+  @ApiProperty()
   @Column()
   profileIconId: number;
 
+  @ApiProperty()
   @Column()
   summonerLevel: number;
 
+  @ApiProperty({type:[SummonerLeagueDto]})
   @Column("jsonb")
   leagues: ISummonerLeague[];
 
+  @ApiProperty()
   @Column()
   region: string;
 
