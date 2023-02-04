@@ -1,11 +1,11 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
-import { enviromentVars } from 'src/config/config';
 import { firstValueFrom } from 'rxjs';
 import { Repository, Like } from 'typeorm';
 
-import { logger } from 'src/config/winston';
-import { MatchEntity } from 'src/Entities/match.entity';
+import { enviromentVars } from '../config/config';
+import { logger } from '../config/winston';
+import { MatchEntity } from '../Entities/match.entity';
 import { IMatchParticipant } from '../interfaces/matchParticipant.interface';
 
 @Injectable()

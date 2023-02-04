@@ -214,7 +214,7 @@ export class RecentMatchesController {
     }
 
     @Get('/new')
-    @ApiOperation({ summary: 'Create new matches for a user.' })
+    @ApiOperation({ summary: 'Create new matches for an existing user.' })
     @ApiResponse({ status: 200, description: 'New matches added' })
     @ApiResponse({ status: 400, description: '0 < RecentMatches < 100' })
     @ApiBody({ type: NewMatchesDto })

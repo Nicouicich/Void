@@ -3,10 +3,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 
-import { enviromentVars } from 'src/config/config';
-import { logger } from 'src/config/winston';
-import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
-import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
+import { enviromentVars } from '../config/config';
+import { logger } from '../config/winston';
+import { SummonerStatsEntity } from '../Entities/summonerStats.entity';
+import { ISummonerLeague } from '../interfaces/summonerLeagues.interface';
 
 
 @Injectable()
@@ -38,7 +38,7 @@ export class PlayerService {
             .getMany();
     };
 
-    
+
 
 
     public async getPlayerStats(summonerID: string, region: string) {
@@ -88,6 +88,7 @@ export class PlayerService {
             const name = summonerName.replaceAll(' ', '%20');
             const url = `https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-name/${name}?api_key=${enviromentVars.LOL_API_KEY}`;
             const response = await firstValueFrom(this.HttpService.get(url));
+            console.log(response);
             return response.data;
         } catch (e) {
             logger.log('error', `Error while requesting an account player by name. Probably cause: ${e}

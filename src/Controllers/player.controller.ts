@@ -2,21 +2,21 @@ import { Controller, Body, Get, Param, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiQuery, ApiBody, ApiProduces, ApiTags } from '@nestjs/swagger';
 
 import { SummonerStatsDto } from './../Dto/summonerStats.dto';
-import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
+import { SummonerStatsEntity } from '../Entities/summonerStats.entity';
 import { ISummonerLeague } from './../interfaces/summonerLeagues.interface';
 import { SummonerDto } from '../Dto/summoner.dto';
-import { PlayerService } from 'src/Services/player.service';
-import { RecentMatchesService } from 'src/Services/recent-matches.service';
-import { getRegionName } from 'src/utils/queueType';
-import { isQueueIdCorrect } from 'src/utils/queueType';
-import { getQueueName } from 'src/utils/queueType';
-import { logger } from 'src/config/winston';
+import { PlayerService } from '../Services/player.service';
+import { RecentMatchesService } from '../Services/recent-matches.service';
+import { getRegionName } from '../utils/queueType';
+import { isQueueIdCorrect } from '../utils/queueType';
+import { getQueueName } from '../utils/queueType';
+import { logger } from '../config/winston';
 
 
 @ApiTags('Players')
 @Controller('player')
 export class PlayerController {
-  leagues = [420, 440, 430, 400, 450, 900];
+  // leagues = [420, 440, 430, 400, 450, 900];
 
   constructor(private PlayerService: PlayerService,
     private RecentMatchesService: RecentMatchesService,
@@ -46,7 +46,9 @@ export class PlayerController {
           return data;
         });
         account.leagues = leagues;
-        return account;
+        res.status(200).send({
+          data: account
+        });
       } else {
         const accountPlayer = await this.createPlayer(summoner.summonerName, summoner.region);
         if (accountPlayer) {
@@ -98,7 +100,7 @@ export class PlayerController {
       }
       matches = await this.RecentMatchesService.getPlayerMatchesDB(account.puuid, queueId);
 
-      if (matches.length === 0) {
+      if (queueId!= 420 && queueId!= 440 && matches.length === 0) {
         res.status(400);
         res.send({
           data: `Player does not have any recent game with the id:${queueId}`
@@ -135,9 +137,11 @@ export class PlayerController {
       const player = await this.PlayerService.getPlayerAccountDB(summonerName, region);
 
       const league = player.leagues.filter((element) => element.queueType == queueName);
-      if (league.length == 0) {
+      console.log(league)
+      if (league.length == 0 || matches.length == 0) {
         return league;
       }
+
       summonerLeagues.rank = league[0].rank;
       summonerLeagues.tier = league[0].tier;
 

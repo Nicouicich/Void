@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 
 import { ISummonerLeague } from './../interfaces/summonerLeagues.interface';
-import { SummonerLeagueDto } from "src/Dto/summonerLeague.dto";
+import { SummonerLeagueDto } from "../Dto/summonerLeague.dto";
 
 @Entity()
 export class SummonerStatsEntity {
