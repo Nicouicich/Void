@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  database:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - /postgres_data:/var/lib/postgresql
+
+  test-database:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=${DB_TEST_NAME}
+      - POSTGRES_USER=${DB_TEST_USERNAME}
+      - POSTGRES_PASSWORD=${DB_TEST_PASSWORD}
+    ports:
+      - '5433:5432'
+    volumes:
+      - /test-postgres_data:/var/lib/postgresql
+
+volumes:
+  postgresql-volume:
+    external: true
+  test-postgresql-volume:
+    external: true
