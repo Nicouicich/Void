@@ -43,17 +43,10 @@ describe('PlayerController', () => {
     controller = module.get<PlayerController>(PlayerController);
   });
 
-  // afterEach(async () => {
-  //   await app.close();
-  // });
-
   afterAll(async () => {
     await app.close();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
   jest.setTimeout(20000);
   it('/player (GET). Should return 200 with the summoner name ET Murtgraf', () => {
     return request(app.getHttpServer())

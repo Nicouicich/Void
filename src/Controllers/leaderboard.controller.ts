@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
+
 import {
   ApiOperation,
   ApiProduces,
@@ -8,10 +9,10 @@ import {
 } from '@nestjs/swagger';
 
 import { StatsLeaderboard, LeaderboardDto } from './../Dto/leaderboard.dto';
-import { getQueueName } from 'src/utils/queueType';
-import { PlayerService } from 'src/Services/player.service';
-import { logger } from 'src/config/winston';
-import { getTierValue, getRankValue } from 'src/utils/tiers';
+import { getQueueName } from '../utils/queueType';
+import { PlayerService } from '../Services/player.service';
+import { logger } from '../config/winston';
+import { getTierValue, getRankValue } from '../utils/tiers';
 
 @ApiTags('Leaderboard')
 @Controller('leaderboard')

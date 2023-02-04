@@ -1,4 +1,4 @@
-import { MatchEntity } from 'src/Entities/match.entity';
+import { MatchEntity } from '../Entities/match.entity';
 import { Controller, Body, Get, Param, Query, Res } from '@nestjs/common';
 import {
   ApiTags,
@@ -11,11 +11,11 @@ import {
 
 import { NewMatchesDto, RecentMatchesDto } from './../Dto/recent-matches.dto';
 import { RecentMatchesService } from './../Services/recent-matches.service';
-import { PlayerService } from 'src/Services/player.service';
-import { logger } from 'src/config/winston';
-import { getRegionName, isQueueIdCorrect } from 'src/utils/queueType';
-import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
-import { ISummonerLeague } from 'src/interfaces/summonerLeagues.interface';
+import { PlayerService } from '../Services/player.service';
+import { logger } from '../config/winston';
+import { getRegionName, isQueueIdCorrect } from '../utils/queueType';
+import { SummonerStatsEntity } from '../Entities/summonerStats.entity';
+import { ISummonerLeague } from '../interfaces/summonerLeagues.interface';
 
 @ApiTags('Recent Matches')
 @Controller('recent-matches')
@@ -53,7 +53,9 @@ export class RecentMatchesController {
     let message: string;
     try {
       if (page < 1 || pageSize < 1) {
-        res.status(400).send('Page and pagesize needs to be higher than 1');
+        res
+          .status(400)
+          .send({ data: 'Page and pagesize needs to be higher than 1' });
         return;
       }
       const regionName = getRegionName(config.region);
@@ -69,11 +71,9 @@ export class RecentMatchesController {
           config.region,
         );
         if (!accountPlayer) {
-          res
-            .status(404)
-            .send(
-              `Summoner with name: ${config.summonerName} and region: ${config.region} does not exists`,
-            );
+          res.status(404).send({
+            data: `Summoner with name: ${config.summonerName} and region: ${config.region} does not exists`,
+          });
           return;
         }
         const recentMatches = await this.RecentMatchesService.getRecentMatches(
@@ -101,13 +101,6 @@ export class RecentMatchesController {
       }
       if (accountPlayer) {
         if (regionName) {
-          // const recentMatches = await this.RecentMatchesService.getRecentMatches(
-          //     accountPlayer.puuid,
-          //     regionName,
-          // );
-          // const data = await this.getRecentMatchesInfo(recentMatches, config.region);
-          // const recentMatches = await this.RecentMatchesService.getPlayerMatchesDB(accountPlayer.puuid, 0);
-
           const skip = (page - 1) * pageSize;
           const matches = await this.RecentMatchesService.findAllMatches(
             accountPlayer.puuid,
@@ -121,6 +114,12 @@ export class RecentMatchesController {
           );
           const totalPages = Math.ceil(total / pageSize);
           res.status(200);
+          let next = '';
+          let prev = '';
+          if (page < totalPages) {
+            next = `/recent-matches?page=${page + 1}&pageSize=${pageSize}`;
+            prev = `/recent-matches?page=${page - 1}&pageSize=${pageSize}`;
+          }
           res.send({
             meta: {
               page,
@@ -129,8 +128,8 @@ export class RecentMatchesController {
               links: {
                 first: `/recent-matches?page=1&pageSize=${pageSize}`,
                 last: `/recent-matches?page=${totalPages}&pageSize=${pageSize}`,
-                prev: `/recent-matches?page=${page - 1}&pageSize=${pageSize}`,
-                next: `/recent-matches?page=${page + 1}&pageSize=${pageSize}`,
+                prev: prev,
+                next: next,
               },
             },
             data: matches,
@@ -193,7 +192,9 @@ export class RecentMatchesController {
       }
 
       if (page < 1 || pageSize < 1) {
-        res.status(400).send('Page and pagesize needs to be higher than 1 ');
+        res
+          .status(400)
+          .send({ data: 'Page and pagesize needs to be higher than 1' });
         return;
       }
       const regionName = getRegionName(config.region);
