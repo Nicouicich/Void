@@ -11,7 +11,7 @@ export const databaseTestProvider = {
       name: 'test',
       type: 'postgres',
       host: enviromentVars.DB_HOST,
-      port: parseInt(enviromentVars.TEST_PORT),
+      port: parseInt(enviromentVars.DB_TEST_PORT),
       username: enviromentVars.DB_TEST_USERNAME,
       password: enviromentVars.DB_TEST_PASSWORD,
       database: enviromentVars.DB_TEST_NAME,
