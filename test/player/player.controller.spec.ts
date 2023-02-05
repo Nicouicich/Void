@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { HttpModule } from '@nestjs/axios';
+import { HttpModule, HttpService } from '@nestjs/axios';
 
 import { PlayerService } from '../../src/Services/player.service';
 import { PlayerController } from '../../src/Controllers/player.controller';
@@ -10,6 +10,7 @@ import { databaseTestProvider } from '../../src/utils/database.test.provider';
 import { SummonerStatsEntity } from '../../src/Entities/summonerStats.entity';
 import { RecentMatchesService } from '../../src/Services/recent-matches.service';
 import { MatchEntity } from '../../src/Entities/match.entity';
+import { firstValueFrom } from 'rxjs';
 
 describe('PlayerController', () => {
   let controller: PlayerController;
@@ -45,6 +46,31 @@ describe('PlayerController', () => {
 
   afterAll(async () => {
     await app.close();
+  });
+
+  async function pollingFunction(url, depth = 0) {
+    // prevent infinite recursion
+    expect(depth).toBeLessThan(15);
+    const httpService = new HttpService();
+    try {
+      const res = await firstValueFrom(httpService.get(url));
+      if (res.status === 200) {
+        console.log('Services on');
+      }
+    } catch (error) {
+      console.log('Services off');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      return pollingFunction(url, depth + 1);
+    }
+  }
+
+  describe('Polling function', () => {
+    it('polls the specified URL and checks if the services are on', async () => {
+      const spy = jest.spyOn(console, 'log');
+      await pollingFunction('http://localhost:3000');
+      expect(spy).toHaveBeenCalledWith('Services on');
+      spy.mockRestore();
+    });
   });
 
   jest.setTimeout(20000);

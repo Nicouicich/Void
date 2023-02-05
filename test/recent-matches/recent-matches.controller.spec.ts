@@ -1,4 +1,4 @@
-import { HttpModule } from '@nestjs/axios';
+import { HttpModule, HttpService } from '@nestjs/axios';
 import { DataSource } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
@@ -48,11 +48,10 @@ describe('RecentMatchesController', () => {
   async function pollingFunction(url, depth = 0) {
     // prevent infinite recursion
     expect(depth).toBeLessThan(15);
-    const webappOn = false;
-    const apiOn = false;
+    const httpService = new HttpService();
     try {
-      const res = await firstValueFrom(this.HttpService.get(url));
-      if (res) {
+      const res = await firstValueFrom(httpService.get(url));
+      if (res.status === 200) {
         console.log('Services on');
       }
     } catch (error) {
@@ -64,8 +63,10 @@ describe('RecentMatchesController', () => {
 
   describe('Polling function', () => {
     it('polls the specified URL and checks if the services are on', async () => {
+      const spy = jest.spyOn(console, 'log');
       await pollingFunction('http://localhost:3000');
-      expect(console.log).toHaveBeenCalledWith('Services on');
+      expect(spy).toHaveBeenCalledWith('Services on');
+      spy.mockRestore();
     });
   });
 
