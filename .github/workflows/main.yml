@@ -35,13 +35,7 @@ jobs:
         with:
           compose-file: "./docker-compose.yml"
           args: up -d --build
-        env:
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          DB_TEST_NAME=${{ secrets.DB_TEST_NAME }}
-          DB_TEST_USERNAME=${{ secrets.DB_TEST_USERNAME }}
-          DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}
+
 
       - name: Run eslint
         run: npm run lint
