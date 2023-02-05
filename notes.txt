@@ -1,6 +1,12 @@
-Cuando me piden informacion respecto a un usuario, hago lo siguiente:
+When I am asked for information about a user, I do the following:
 
-1. Reviso si ese usuario esta en mi base de datos
-    1.a Existe en mi base de datos, retorno lo que tengo.
-    1.b No existe en mi base de datos.
-        1.1.A. Hago una consulta respecto a esa cuenta y otra que traiga los ultimos 20 partidos de ese usuario y guardo esa info en la base de datos.
+1. I check if that user is in my database.
+    1.a It exists in my database, I return what I have.
+    1.b It does not exist in my database.
+        1.1.A. I make a query regarding that account and if it exists, I make another one that brings the last 20 matches of that user and I save that info in the database.
+
+2. The logic for recent matches is the same. If the user exists, I return what I have, in case it does not exist, I look for it in the LOL API.
+
+3. The leaderboard only shows those users that have a rank for the requested league. That is to say that if you hit the endpoint /leaderboard/420, it will bring only the users that comply to have a league currently in Solo Queue, otherwise, they are not considered at all in the leaderboard.
+
+4. I hope you like it and that it meets your expectations!
