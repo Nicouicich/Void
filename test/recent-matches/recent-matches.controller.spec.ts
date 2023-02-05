@@ -10,6 +10,7 @@ import { PlayerService } from '../../src/Services/player.service';
 import { RecentMatchesService } from '../../src/Services/recent-matches.service';
 import { databaseTestProvider } from '../../src/utils/database.test.provider';
 import { RecentMatchesController } from '../../src/Controllers/recent-matches.controller';
+import { firstValueFrom } from 'rxjs';
 
 describe('RecentMatchesController', () => {
   let controller: RecentMatchesController;
@@ -42,6 +43,30 @@ describe('RecentMatchesController', () => {
     await app.init();
 
     controller = module.get<RecentMatchesController>(RecentMatchesController);
+  });
+
+  async function pollingFunction(url, depth = 0) {
+    // prevent infinite recursion
+    expect(depth).toBeLessThan(15);
+    const webappOn = false;
+    const apiOn = false;
+    try {
+      const res = await firstValueFrom(this.HttpService.get(url));
+      if (res) {
+        console.log('Services on');
+      }
+    } catch (error) {
+      console.log('Services off');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      return pollingFunction(url, depth + 1);
+    }
+  }
+
+  describe('Polling function', () => {
+    it('polls the specified URL and checks if the services are on', async () => {
+      await pollingFunction('http://localhost:3000');
+      expect(console.log).toHaveBeenCalledWith('Services on');
+    });
   });
 
   jest.setTimeout(20000);
