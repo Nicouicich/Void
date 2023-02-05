@@ -75,10 +75,10 @@ export function getRegionName(region: string): string | null {
     case 'TH2':
     case 'SG2':
     case 'TW2':
-    case 'VN2':
       response = 'asia';
       break;
     case 'OC1':
+    case 'VN2':
       response = 'SEA';
       break;
     default:

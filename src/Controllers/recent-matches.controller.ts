@@ -48,9 +48,8 @@ export class RecentMatchesController {
     logger.log(
       'info',
       `New call at the endpoint /recent-matches with query: ${page}, ${pageSize},
-            body ${config},`,
+            body ${config.summonerName}, ${config.region}`,
     );
-    let message: string;
     try {
       if (page < 1 || pageSize < 1) {
         res
@@ -135,8 +134,9 @@ export class RecentMatchesController {
             data: matches,
           });
         } else {
-          message = `Region: ${config.region} unavailable`;
-          res.status(404);
+          res.status(404).send({
+            data: `Region: ${config.region} unavailable`,
+          });
         }
       } else {
         res.status(404).send({
@@ -289,10 +289,10 @@ export class RecentMatchesController {
     }
   }
 
-  @Get('/new')
+  @Get('new/matches')
   @ApiOperation({ summary: 'Create new matches for an existing user.' })
   @ApiResponse({ status: 200, description: 'New matches added' })
-  @ApiResponse({ status: 400, description: '0 < RecentMatches < 100' })
+  @ApiResponse({ status: 400, description: '0 < RecentMatches < 500' })
   @ApiBody({ type: NewMatchesDto })
   @ApiProduces('application/json')
   async getMoreMatches(@Res() res, @Body() config: NewMatchesDto) {
@@ -304,8 +304,12 @@ export class RecentMatchesController {
             ${config.recentMatches},`,
     );
     try {
-      if (config.recentMatches > 100 || config.recentMatches < 1) {
-        res.status(400).send(`New matches count must be between 1 and 100`);
+      if (
+        config.recentMatches == undefined ||
+        config.recentMatches > 500 ||
+        config.recentMatches < 1
+      ) {
+        res.status(400).send(`New matches count must be between 1 and 500`);
         return;
       }
       const account = await this.PlayerService.getPlayerAccountDB(

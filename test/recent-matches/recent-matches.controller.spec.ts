@@ -8,7 +8,7 @@ import { MatchEntity } from '../../src/Entities/match.entity';
 import { SummonerStatsEntity } from '../../src/Entities/summonerStats.entity';
 import { PlayerService } from '../../src/Services/player.service';
 import { RecentMatchesService } from '../../src/Services/recent-matches.service';
-import { databaseTestProvider } from '../../src/utils/database.test.provider';
+import { databaseProvider } from '../../src/utils/database.provider';
 import { RecentMatchesController } from '../../src/Controllers/recent-matches.controller';
 
 describe('RecentMatchesController', () => {
@@ -22,7 +22,7 @@ describe('RecentMatchesController', () => {
       providers: [
         PlayerService,
         RecentMatchesService,
-        databaseTestProvider,
+        databaseProvider,
         {
           provide: 'SUMMONER_STATS_REPOSITORY',
           useFactory: (dataSource: DataSource) =>

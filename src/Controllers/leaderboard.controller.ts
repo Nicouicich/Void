@@ -46,19 +46,25 @@ export class LeaderboardController {
 
       const players = await this.PlayerService.getPlayersWithLeagueDB();
 
-      let playersWinrate = players.map((player) => {
+      const playersWinrate = players.map((player) => {
         player.leagues = player.leagues.filter(
           (league) => league.queueType == queueName,
         );
         return player;
       });
-      playersWinrate = players.sort((a, b) => {
-        return b.leagues[0].winrate - a.leagues[0].winrate;
+
+      const playersWinFiltered = players.filter((player) => {
+        if (player.leagues.length != 0) {
+          return player;
+        }
       });
 
+      const playerWinAndFiltered = playersWinFiltered.sort((a, b) => {
+        return b.leagues[0]?.winrate - a.leagues[0]?.winrate;
+      });
       const leaderboard = new LeaderboardDto([]);
 
-      playersWinrate.map((player, index) => {
+      playerWinAndFiltered.map((player, index) => {
         const stats = new StatsLeaderboard(
           player.summonerName,
           0,
@@ -68,14 +74,14 @@ export class LeaderboardController {
         leaderboard.leaderboard.push(stats);
       });
 
-      const playersRank = players.sort((a, b) => {
-        const tierA = getTierValue(a.leagues[0].tier);
-        const tierB = getTierValue(b.leagues[0].tier);
+      const playersRank = playersWinFiltered.sort((a, b) => {
+        const tierA = getTierValue(a?.leagues[0].tier);
+        const tierB = getTierValue(b?.leagues[0].tier);
         if (tierA !== tierB) {
           return tierB - tierA;
         } else {
-          const rankA = getRankValue(a.leagues[0].rank);
-          const rankB = getRankValue(b.leagues[0].rank);
+          const rankA = getRankValue(a?.leagues[0].rank);
+          const rankB = getRankValue(b?.leagues[0].rank);
           return rankB - rankA;
         }
       });

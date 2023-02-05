@@ -15,9 +15,8 @@ export const databaseProvider = {
       password: enviromentVars.DB_PASSWORD,
       database: enviromentVars.DB_NAME,
       entities: [SummonerStatsEntity, MatchEntity],
-      synchronize: false,
+      synchronize: true,
     });
-
     return dataSource.initialize();
   },
 };
