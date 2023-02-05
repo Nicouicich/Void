@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
 
-import { SummonerStatsEntity } from 'src/Entities/summonerStats.entity';
-import { MatchEntity } from 'src/Entities/match.entity';
-import { enviromentVars } from 'src/config/config';
+import { SummonerStatsEntity } from '../Entities/summonerStats.entity';
+import { MatchEntity } from '../Entities/match.entity';
+import { enviromentVars } from '../config/config';
 
 export const databaseProvider = {
   provide: 'DATA_SOURCE',
