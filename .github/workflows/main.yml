@@ -44,7 +44,8 @@ jobs:
           DB_TEST_NAME: "${{ secrets.DB_TEST_NAME }}"
           DB_TEST_USERNAME: "${{ secrets.DB_TEST_USERNAME }}"
           DB_TEST_PASSWORD: "${{ secrets.DB_TEST_PASSWORD }}"
-          DB_TEST_PORT: 5433
+          DB_TEST_PORT: 5432
+        
 
       - name: Install dependencies
         run: npm install

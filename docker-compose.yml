@@ -19,7 +19,7 @@ services:
       - POSTGRES_USER=${DB_TEST_USERNAME}
       - POSTGRES_PASSWORD=${DB_TEST_PASSWORD}
     ports:
-      - '5433:5432'
+      - '5432:5432'
     volumes:
       - /test-postgres_data:/var/lib/postgresql
 
