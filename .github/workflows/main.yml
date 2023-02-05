@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: composer:latest
-        - ${{ github.worspace }}:/app
 
     steps:
       - name: Checkout code
@@ -23,9 +20,20 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: Running composer install
-        run: composer install
+      
+      - name: Set Environment Variables
+        run: |
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          echo "DB_TEST_NAME=${{ secrets.DB_TEST_NAME }}" >> $GITHUB_ENV
+          echo "DB_TEST_USERNAME=${{ secrets.DB_TEST_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}" >> $GITHUB_ENV
+  
+      - name: Start Docker Compose
+        uses: docker/compose-action@v1.0.0
+        with:
+          args: up -d --build
 
       - name: Run eslint
         run: npm run lint
