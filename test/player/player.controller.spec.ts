@@ -9,7 +9,7 @@ import { PlayerController } from '../../src/Controllers/player.controller';
 import { SummonerStatsEntity } from '../../src/Entities/summonerStats.entity';
 import { RecentMatchesService } from '../../src/Services/recent-matches.service';
 import { MatchEntity } from '../../src/Entities/match.entity';
-import { databaseProvider } from '../../src/utils/database.provider';
+import { databaseTestProvider } from '../../src/utils/database.test.provider';
 
 describe('PlayerController', () => {
   let controller: PlayerController;
@@ -22,7 +22,7 @@ describe('PlayerController', () => {
       providers: [
         PlayerService,
         RecentMatchesService,
-        databaseProvider,
+        databaseTestProvider,
         {
           provide: 'SUMMONER_STATS_REPOSITORY',
           useFactory: (dataSource: DataSource) =>
