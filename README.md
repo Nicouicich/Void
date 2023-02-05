@@ -46,3 +46,8 @@ Have npm installed in your computer
 
 7. Go to the src folder and execute npm run start:prod
 
+### Information
+```
+  For more information about the endpoints, once the application is running, go to /api
+```
+
