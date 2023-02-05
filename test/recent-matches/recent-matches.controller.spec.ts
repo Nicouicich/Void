@@ -47,7 +47,7 @@ describe('RecentMatchesController', () => {
   jest.setTimeout(20000);
   it('/recent-matches (GET). Should return 200 with the summoner name ET Murtgraf', () => {
     return request(app.getHttpServer())
-      .get('/recent-matches')
+      .get('https://127.0.0.1:3000/recent-matches')
       .send({ summonerName: 'ET Murtgraf', region: 'la2' })
       .expect(200)
       .then((response) => {

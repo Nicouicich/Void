@@ -36,7 +36,7 @@ jobs:
         uses: isbang/compose-action@v1.4.1
         with:
           compose-file: "./docker-compose.yml"
-          command: up
+          command: up -D test-database
         env:
           DB_NAME: "${{ secrets.DB_NAME }}"
           DB_USERNAME: "${{ secrets.DB_USERNAME }}"
