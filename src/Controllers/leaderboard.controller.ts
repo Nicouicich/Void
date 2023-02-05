@@ -1,5 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
-
+import { Controller, Get, Param, Res, UseInterceptors } from '@nestjs/common';
 import {
   ApiOperation,
   ApiProduces,
@@ -14,6 +13,7 @@ import { PlayerService } from '../Services/player.service';
 import { logger } from '../config/winston';
 import { getTierValue, getRankValue } from '../utils/tiers';
 
+@UseInterceptors()
 @ApiTags('Leaderboard')
 @Controller('leaderboard')
 export class LeaderboardController {

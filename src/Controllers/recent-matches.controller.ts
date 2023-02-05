@@ -120,7 +120,7 @@ export class RecentMatchesController {
             next = `/recent-matches?page=${page + 1}&pageSize=${pageSize}`;
             prev = `/recent-matches?page=${page - 1}&pageSize=${pageSize}`;
           }
-          res.send({
+          res.status(200).send({
             meta: {
               page,
               pageSize,
@@ -139,12 +139,10 @@ export class RecentMatchesController {
           res.status(404);
         }
       } else {
-        message = `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`;
-        res.status(accountPlayer);
+        res.status(404).send({
+          data: `Could not retrieve matches from the summoner name: ${config.summonerName} and region: ${config.region}`,
+        });
       }
-      return {
-        data: message,
-      };
     } catch (e) {
       return {
         data: e,
