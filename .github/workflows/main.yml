@@ -18,18 +18,6 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Set Environment Variables
-        run: |
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
-          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
-          echo "DB_TEST_NAME=${{ secrets.DB_TEST_NAME }}" >> $GITHUB_ENV
-          echo "DB_TEST_USERNAME=${{ secrets.DB_TEST_USERNAME }}" >> $GITHUB_ENV
-          echo "DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}" >> $GITHUB_ENV
-
       - name: Create external volume
         run: docker volume create --name=test-postgresql-volume
       - name: Create external Volume
@@ -47,6 +35,18 @@ jobs:
           DB_TEST_NAME: "${{ secrets.DB_TEST_NAME }}"
           DB_TEST_USERNAME: "${{ secrets.DB_TEST_USERNAME }}"
           DB_TEST_PASSWORD: "${{ secrets.DB_TEST_PASSWORD }}"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set Environment Variables
+        run: |
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          echo "DB_TEST_NAME=${{ secrets.DB_TEST_NAME }}" >> $GITHUB_ENV
+          echo "DB_TEST_USERNAME=${{ secrets.DB_TEST_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Run eslint
         run: npm run lint
