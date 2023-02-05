@@ -32,6 +32,8 @@ jobs:
 
       - name: Create external volume
         run: docker volume create --name=test-postgresql-volume
+      - name: Create external Volume  
+        run: docker volume create --name=postgresql-volume
 
       - name: Start Docker Compose
         uses: isbang/compose-action@v1.4.1
