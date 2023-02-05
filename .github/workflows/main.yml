@@ -12,9 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Docker compose
-        uses: isbang/compose-action@v1.4.1
-        
+
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
@@ -22,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-      
+
       - name: Set Environment Variables
         run: |
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
@@ -31,11 +29,19 @@ jobs:
           echo "DB_TEST_NAME=${{ secrets.DB_TEST_NAME }}" >> $GITHUB_ENV
           echo "DB_TEST_USERNAME=${{ secrets.DB_TEST_USERNAME }}" >> $GITHUB_ENV
           echo "DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}" >> $GITHUB_ENV
-  
+
       - name: Start Docker Compose
-        uses: docker/compose-action@v1.4.1
+        uses: isbang/compose-action@v1.4.1
         with:
+          compose-file: "./docker-compose.yml"
           args: up -d --build
+        env:
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_TEST_NAME=${{ secrets.DB_TEST_NAME }}
+          DB_TEST_USERNAME=${{ secrets.DB_TEST_USERNAME }}
+          DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}
 
       - name: Run eslint
         run: npm run lint
