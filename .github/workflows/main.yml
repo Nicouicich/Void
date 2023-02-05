@@ -31,7 +31,7 @@ jobs:
           echo "DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}" >> $GITHUB_ENV
   
       - name: Start Docker Compose
-        uses: docker/compose-action@v1.0.0
+        uses: docker/compose-action@v1.4.1
         with:
           args: up -d --build
 
