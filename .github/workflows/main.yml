@@ -31,13 +31,13 @@ jobs:
           echo "DB_TEST_PASSWORD=${{ secrets.DB_TEST_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Create external volume
-        run: docker volume create --name=postgresql-volume
+        run: docker volume create --name=test-postgresql-volume
 
       - name: Start Docker Compose
         uses: isbang/compose-action@v1.4.1
         with:
           compose-file: "./docker-compose.yml"
-          up-flags: docker-compose up
+          up-flags: "up"
 
       - name: Run eslint
         run: npm run lint
