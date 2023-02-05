@@ -46,5 +46,3 @@ Have npm installed in your computer
 
 7. Go to the src folder and execute npm run start:prod
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
