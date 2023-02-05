@@ -1,9 +1,15 @@
-When I am asked for information about a user, I do the following:
+When the API recives a call at /player/:queuid 
 
-1. I check if that user is in my database.
+1. I check if the user is in my database.
     1.a It exists in my database, I return what I have.
+
     1.b It does not exist in my database.
         1.1.A. I make a query regarding that account and if it exists, I make another one that brings the last 20 matches of that user and I save that info in the database.
+
+    1.C The following stats can be 0 when the user has not played any recent match in a ranked queue, but it has a league:
+        "AverageKDA": 0,
+        "AverageCSPerMinute": 0,
+        "AverageVisionScore": 0
 
 2. The logic for recent matches is the same. If the user exists, I return what I have, in case it does not exist, I look for it in the LOL API.
 
