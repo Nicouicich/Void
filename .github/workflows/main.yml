@@ -39,7 +39,6 @@ jobs:
           command: up -D test-database
         env:
           DB_NAME: "${{ secrets.DB_NAME }}"
-          DB_HOST: localhost
           DB_USERNAME: "${{ secrets.DB_USERNAME }}"
           DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
           DB_TEST_NAME: "${{ secrets.DB_TEST_NAME }}"
